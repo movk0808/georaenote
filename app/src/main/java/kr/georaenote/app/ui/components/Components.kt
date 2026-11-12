@@ -357,36 +357,17 @@ fun TypeBadge(type: ContractType, size: Dp = 40.dp) {
 }
 
 /**
- * 홈 상단 그래픽: 동전과 카드가 겹쳐 떠 있는 장면을 직접 그립니다(외부 이미지 없음).
+ * 홈 상단 메인 그래픽: Blender로 렌더링한 3D 장면(네이비 카드 + 입금완료 영수증 + 동전, 배경 투명).
+ * 원본 장면 스크립트는 brand/3d/hero.py 에 있습니다.
  */
 @Composable
 fun HeroGraphic(modifier: Modifier = Modifier) {
-    Canvas(modifier) {
-        val w = size.width
-        val h = size.height
-        // 뒤쪽 큰 원판(같은 계열 안에서만 명도 변화)
-        drawOval(
-            Brush.linearGradient(listOf(Color(0xFFE6ECF5), Color(0xFFD3DDEC)), Offset(w * 0.25f, h * 0.1f), Offset(w * 0.85f, h * 0.9f)),
-            topLeft = Offset(w * 0.22f, h * 0.18f), size = Size(w * 0.62f, h * 0.62f),
-        )
-        drawOval(Color.White.copy(alpha = 0.6f), topLeft = Offset(w * 0.30f, h * 0.24f), size = Size(w * 0.46f, h * 0.46f), style = Stroke(width = 3f))
-        // 왼쪽 동전(입금 그린)
-        drawCircle(Brush.linearGradient(listOf(Color(0xFF10A37A), Brand.Paid)), radius = h * 0.17f, center = Offset(w * 0.12f, h * 0.30f))
-        drawCircle(Color.White.copy(alpha = 0.45f), radius = h * 0.12f, center = Offset(w * 0.12f, h * 0.30f), style = Stroke(width = 4f))
-        // 아래 작은 동전 두 개(무채색)
-        drawCircle(Brush.linearGradient(listOf(Color(0xFFF1F4F8), Color(0xFFD9E0EA))), radius = h * 0.13f, center = Offset(w * 0.33f, h * 0.78f))
-        drawCircle(Color.White, radius = h * 0.09f, center = Offset(w * 0.33f, h * 0.78f), style = Stroke(width = 3f))
-        drawCircle(Brush.linearGradient(listOf(Color(0xFFF4F6FA), Color(0xFFE1E7EF))), radius = h * 0.09f, center = Offset(w * 0.20f, h * 0.62f))
-        // 오른쪽 카드(네이비)
-        rotate(-14f, pivot = Offset(w * 0.80f, h * 0.36f)) {
-            drawRoundRect(
-                Brush.linearGradient(listOf(Color(0xFF28507F), Brand.Navy), Offset(w * 0.64f, h * 0.18f), Offset(w * 0.98f, h * 0.56f)),
-                topLeft = Offset(w * 0.64f, h * 0.18f), size = Size(w * 0.34f, h * 0.36f), cornerRadius = CornerRadius(26f, 26f),
-            )
-            drawRoundRect(Color(0xFFE2C27A), topLeft = Offset(w * 0.69f, h * 0.27f), size = Size(w * 0.06f, h * 0.08f), cornerRadius = CornerRadius(6f, 6f))
-            drawRoundRect(Color.White.copy(alpha = 0.7f), topLeft = Offset(w * 0.69f, h * 0.44f), size = Size(w * 0.16f, h * 0.03f), cornerRadius = CornerRadius(4f, 4f))
-        }
-    }
+    androidx.compose.foundation.Image(
+        painter = androidx.compose.ui.res.painterResource(kr.georaenote.app.R.drawable.hero_3d),
+        contentDescription = null,
+        modifier = modifier,
+        contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+    )
 }
 
 /** 원형 페이지 표시 점 */

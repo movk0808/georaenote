@@ -1,6 +1,10 @@
 package kr.georaenote.app.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import kr.georaenote.app.R
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -104,8 +108,9 @@ fun HomeScreen(vm: AppViewModel, go: (String) -> Unit, openWeb: () -> Unit) {
             Banner(
                 brush = Brand.navyFill,
                 small = "물품대금 · 식자재 · 월세 등 다양한 거래",
-                big = "언제 어디서나 ${Content.SERVICE_NAME}와 함께",
+                big = "언제 어디서나\n${Content.SERVICE_NAME}와 함께",
                 light = true,
+                photo = R.drawable.banner_shop,
             ) { go(Routes.GUIDE) }
             Banner(
                 brush = androidx.compose.ui.graphics.SolidColor(Brand.PrimarySoft),
@@ -113,6 +118,7 @@ fun HomeScreen(vm: AppViewModel, go: (String) -> Unit, openWeb: () -> Unit) {
                 big = "첫 송금 완료하면\n3,000M 적립!",
                 light = false,
                 cta = "자세히 보기",
+                sideImage = R.drawable.event_coins_cut,
             ) { go(Routes.event(2)) }
             MenuRow(Icons.Outlined.CreditCard, Color(0xFFFFE9EE), Color(0xFFE5484D), "카드 할부 정보") { go(Routes.INSTALLMENT) }
             MenuRow(Icons.Outlined.HelpOutline, Color(0xFFEDE9FF), Color(0xFF7C5CF6), "자주묻는 질문") { go(Routes.board(0)) }
@@ -265,13 +271,30 @@ private fun QuizRow(onClick: () -> Unit) {
     }
 }
 
+/**
+ * 홈 배너. photo 가 있으면 사진을 배경으로 깔고 왼쪽에 같은 네이비로 글자 영역을 만들고,
+ * sideImage 가 있으면 오른쪽에 작은 이미지를 둡니다.
+ */
 @Composable
-private fun Banner(brush: Brush, small: String, big: String, light: Boolean, cta: String? = null, onClick: () -> Unit) {
+private fun Banner(
+    brush: Brush, small: String, big: String, light: Boolean, cta: String? = null,
+    photo: Int? = null, sideImage: Int? = null, onClick: () -> Unit,
+) {
     Box(
-        Modifier.fillMaxWidth().heightIn(min = 118.dp).clip(RoundedCornerShape(18.dp)).background(brush).clickable(onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 16.dp),
+        Modifier.fillMaxWidth().heightIn(min = 118.dp).clip(RoundedCornerShape(18.dp)).background(brush).clickable(onClick = onClick),
     ) {
-        Column(Modifier.align(Alignment.CenterStart)) {
+        if (photo != null) {
+            Image(painterResource(photo), null, Modifier.matchParentSize(), contentScale = ContentScale.Crop, alignment = Alignment.CenterEnd)
+            Box(
+                Modifier.matchParentSize().background(
+                    Brush.horizontalGradient(0f to Brand.Navy, 0.45f to Brand.Navy.copy(alpha = 0.85f), 1f to Brand.Navy.copy(alpha = 0.05f)),
+                ),
+            )
+        }
+        if (sideImage != null) {
+            Image(painterResource(sideImage), null, Modifier.align(Alignment.CenterEnd).padding(end = 8.dp).size(112.dp), contentScale = ContentScale.Fit)
+        }
+        Column(Modifier.align(Alignment.CenterStart).padding(horizontal = 20.dp, vertical = 16.dp)) {
             Text(small, fontSize = 12.sp, color = if (light) Color.White.copy(alpha = 0.8f) else Brand.SubInk)
             Text(big, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = if (light) Color.White else Brand.Ink, lineHeight = 24.sp)
             if (cta != null) {
@@ -295,9 +318,11 @@ private fun HomePopup(onClose: () -> Unit, onToday: () -> Unit, onNever: () -> U
                 IconButton(onClick = onClose, modifier = Modifier.align(Alignment.TopEnd).offset(x = 12.dp, y = (-12).dp)) {
                     Icon(Icons.Filled.Close, "닫기", tint = Brand.Ink)
                 }
-                Box(Modifier.align(Alignment.CenterEnd).size(110.dp).clip(CircleShape).background(Brand.navyFill), contentAlignment = Alignment.Center) {
-                    Text("M", color = Color.White, fontSize = 52.sp, fontWeight = FontWeight.ExtraBold)
-                }
+                Image(
+                    painterResource(R.drawable.event_coins), null,
+                    Modifier.align(Alignment.CenterEnd).offset(x = 8.dp).size(136.dp).clip(RoundedCornerShape(20.dp)),
+                    contentScale = ContentScale.Crop,
+                )
                 Column(Modifier.padding(top = 18.dp, bottom = 6.dp)) {
                     Text("첫 송금 완료하고", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = Brand.Ink)
                     Row {

@@ -75,10 +75,13 @@ export default function Landing() {
 
       <section className="section alt">
         <div className="container">
-          <div className="section-head">
-            <p className="kicker">이럴 때 쓰세요</p>
-            <h2>통장에 현금이 없는데<br />거래처에는 당장 보내야 한다면</h2>
-            <p>여기저기 돈 빌리지 말고, 카드 결제일까지 여유를 만드세요.</p>
+          <div className="split-head">
+            <div className="section-head">
+              <p className="kicker">이럴 때 쓰세요</p>
+              <h2>통장에 현금이 없는데<br />거래처에는 당장 보내야 한다면</h2>
+              <p>여기저기 돈 빌리지 말고, 카드 결제일까지 여유를 만드세요.</p>
+            </div>
+            <img className="split-photo" src={`${import.meta.env.BASE_URL}img/banner-shop.webp`} alt="아침에 식자재 납품을 확인하는 식당 사장님" loading="lazy" />
           </div>
           <div className="use-grid">
             {USES.map((u, i) => (

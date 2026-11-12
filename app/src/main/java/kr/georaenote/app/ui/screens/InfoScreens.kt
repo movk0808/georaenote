@@ -208,7 +208,16 @@ private fun EventCard(e: EventItem, onClick: () -> Unit) {
                 Spacer(Modifier.height(8.dp))
                 Text(e.subtitle, fontSize = 13.sp, color = Brand.SubInk)
             }
-            Icon(Icons.Outlined.AutoAwesome, null, tint = Brand.Primary, modifier = Modifier.align(Alignment.CenterEnd).size(52.dp))
+            if (e.id == 1) {
+                Icon(Icons.Outlined.AutoAwesome, null, tint = Brand.Primary, modifier = Modifier.align(Alignment.CenterEnd).size(52.dp))
+            } else {
+                androidx.compose.foundation.Image(
+                    androidx.compose.ui.res.painterResource(if (e.id == 2) kr.georaenote.app.R.drawable.event_coins_cut else kr.georaenote.app.R.drawable.banner_shop),
+                    null,
+                    Modifier.align(Alignment.CenterEnd).size(96.dp).clip(RoundedCornerShape(14.dp)),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                )
+            }
         }
         Column(Modifier.padding(16.dp)) {
             Text(e.title, fontWeight = FontWeight.Bold, color = Brand.Ink, fontSize = 15.sp)
@@ -347,13 +356,11 @@ fun MagazineScreen(back: () -> Unit, go: (String) -> Unit) {
             }
             items(list, key = { it.id }) { a ->
                 Column(Modifier.fillMaxWidth().clickable { go(Routes.article(a.id)) }.padding(horizontal = 20.dp, vertical = 10.dp)) {
-                    Box(
-                        Modifier.fillMaxWidth().height(150.dp).clip(RoundedCornerShape(16.dp))
-                            .background(if (a.id % 2 == 0) Brand.navyFill else androidx.compose.ui.graphics.SolidColor(Brand.Paid)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(a.category, fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = Color.White.copy(alpha = 0.9f))
-                    }
+                    androidx.compose.foundation.Image(
+                        androidx.compose.ui.res.painterResource(magazineImage(a.id)), null,
+                        Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(16.dp)).background(Brand.Raised),
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                    )
                     Spacer(Modifier.height(10.dp))
                     Text(a.category, fontSize = 12.sp, color = Brand.Primary, fontWeight = FontWeight.SemiBold)
                     Text(a.title, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Brand.Ink, lineHeight = 24.sp)
@@ -373,6 +380,12 @@ fun ArticleScreen(id: Int, back: () -> Unit) {
             Text("글을 찾을 수 없어요.", Modifier.padding(20.dp)); return@Screen
         }
         Column(Modifier.verticalScroll(rememberScrollState()).padding(20.dp)) {
+            androidx.compose.foundation.Image(
+                androidx.compose.ui.res.painterResource(magazineImage(a.id)), null,
+                Modifier.fillMaxWidth().height(200.dp).clip(RoundedCornerShape(16.dp)),
+                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+            )
+            Spacer(Modifier.height(18.dp))
             Text(a.category, fontSize = 13.sp, color = Brand.Primary, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(6.dp))
             Text(a.title, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Brand.Ink, lineHeight = 30.sp)
@@ -470,4 +483,14 @@ fun GuideScreen(vm: AppViewModel, back: () -> Unit, go: (String) -> Unit) {
             }
         }
     }
+}
+
+/** 매거진 글 번호별 썸네일(Sunra로 생성한 사진) */
+fun magazineImage(id: Int): Int = when (id) {
+    1 -> kr.georaenote.app.R.drawable.mag1
+    2 -> kr.georaenote.app.R.drawable.mag2
+    3 -> kr.georaenote.app.R.drawable.mag3
+    4 -> kr.georaenote.app.R.drawable.mag4
+    5 -> kr.georaenote.app.R.drawable.mag5
+    else -> kr.georaenote.app.R.drawable.mag6
 }

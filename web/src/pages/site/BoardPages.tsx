@@ -6,6 +6,7 @@ import { FaqList, Pager } from '../../components/ui'
 import { answerQuiz, mileageBalance, quizIndex, useStore } from '../../lib/store'
 import { mileage, today } from '../../lib/format'
 
+const IMG = `${import.meta.env.BASE_URL}img/`
 const PAGE = 10
 const TABS = [
   { key: 'faq', label: '자주 묻는 질문' },
@@ -87,9 +88,11 @@ function NoticeTab() {
 function EventTab() {
   return (
     <div className="article-grid">
-      {EVENTS.map((e, i) => (
+      {EVENTS.map((e) => (
         <Link key={e.id} to={`/event/${e.id}`} className="article-card">
-          <div className="thumb" style={{ background: i % 2 ? 'var(--paid)' : 'var(--navy)', fontSize: 18, padding: 20, textAlign: 'center' }}>{e.subtitle}</div>
+          {e.id === 1
+            ? <div className="thumb" style={{ background: 'var(--navy)', fontSize: 18, padding: 20, textAlign: 'center' }}>{e.subtitle}</div>
+            : <img className="thumb-img" src={IMG + (e.id === 2 ? 'coins.webp' : 'banner-shop.webp')} alt="" loading="lazy" />}
           <span className="pill pill-neutral" style={{ justifySelf: 'start' }}>{e.tag}</span>
           <h3>{e.title}</h3>
           <span className="muted" style={{ fontSize: 13 }}>{e.period}</span>
@@ -197,7 +200,7 @@ export function MagazinePage() {
         <div className="article-grid">
           {list.map((a) => (
             <Link key={a.id} to={`/magazine/${a.id}`} className="article-card">
-              <div className="thumb" style={{ background: a.category === '사업 이야기' ? 'var(--navy)' : 'var(--paid)' }}>{a.category}</div>
+              <img className="thumb-img" src={`${IMG}mag${a.id}.webp`} alt="" loading="lazy" />
               <span className="muted" style={{ fontSize: 13 }}>{a.category} · {a.date}</span>
               <h3>{a.title}</h3>
               <p className="sub" style={{ margin: 0, fontSize: 14 }}>{a.summary}</p>
@@ -221,6 +224,7 @@ export function ArticlePage() {
         <h1 style={{ fontSize: 30, lineHeight: 1.35 }}>{a.title}</h1>
         <p style={{ marginTop: 12 }}>{a.summary}</p>
       </div>
+      <img className="thumb-img" style={{ aspectRatio: '16 / 9', marginBottom: 32 }} src={`${IMG}mag${a.id}.webp`} alt="" />
       <div className="prose">{a.body}</div>
       <p style={{ marginTop: 40 }}><Link className="btn btn-secondary btn-sm" to="/magazine">목록으로</Link></p>
     </div>

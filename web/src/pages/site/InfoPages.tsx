@@ -20,6 +20,7 @@ export function GuidePage() {
     <>
       <PageHead title="이용방법" sub="현금이 필요할 때, 카드를 쓰세요. 계약 등록부터 송금까지 순서대로 안내해 드려요" />
       <div className="container">
+        <img className="page-visual" style={{ marginBottom: 40 }} src={`${import.meta.env.BASE_URL}img/hero-3d.webp`} alt="카드로 결제하고 입금 완료 영수증을 받는 모습" />
         <div className="use-grid">
           {GUIDE_POINTS.map((p) => (
             <div key={p.title} className="use-card"><h3>{p.title}</h3><p>{p.body}</p></div>
@@ -122,6 +123,13 @@ export function DownloadPage() {
     <>
       <PageHead title="앱 다운로드" sub="안드로이드 앱으로 쓰거나, 웹앱으로 홈 화면에 추가해서 쓸 수 있어요" />
       <div className="container">
+        <div className="split-head" style={{ alignItems: 'center' }}>
+          <div>
+            <h2 style={{ fontSize: 26, fontWeight: 600, margin: '0 0 12px', letterSpacing: '-0.02em' }}>계약 등록부터 송금 완료까지<br />앱에서는 이렇게 동작해요</h2>
+            <p className="sub" style={{ margin: 0 }}>거래 유형을 고르고 거래처와 증빙을 등록한 뒤, 승인된 계약으로 카드 결제하고 송금하는 실제 안드로이드 화면이에요.</p>
+          </div>
+          <img className="demo-gif" style={{ justifySelf: 'center' }} src={`${base}img/app-demo.webp`} alt="안드로이드 앱 사용 장면" loading="lazy" />
+        </div>
         <div className="steps3">
           <div className="step3">
             <span className="icon"><Smartphone size={20} strokeWidth={1.75} /></span>

@@ -197,6 +197,12 @@ img, svg { display: block; }
 .section-head h2 { font-size: 36px; line-height: 1.25; letter-spacing: -0.02em; font-weight: 600; margin: 0 0 12px; }
 .section-head p { margin: 0; font-size: 17px; color: var(--sub); }
 
+.split-head { display: grid; grid-template-columns: 1fr 1.1fr; gap: 40px; align-items: center; margin-bottom: 40px; }
+.split-head .section-head { margin-bottom: 0; }
+.split-photo { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; object-position: 70% 50%; border-radius: var(--r-panel); }
+.thumb-img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; border-radius: var(--r-card); background: var(--raised); }
+.page-visual { width: 100%; max-width: 640px; display: block; margin: 0 auto; }
+.demo-gif { width: 100%; max-width: 300px; border-radius: 28px; border: 8px solid var(--ink); box-shadow: var(--shadow-float); background: var(--ink); }
 .use-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 .use-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); padding: 28px; display: grid; gap: 12px; align-content: start; transition: border-color 150ms var(--ease); }
 .use-card:hover { border-color: #c4ccd8; }
@@ -384,6 +390,7 @@ img, svg { display: block; }
 /* ---------- 반응형 ---------- */
 @media (max-width: 960px) {
   .hero-grid { grid-template-columns: 1fr; gap: 40px; }
+  .split-head { grid-template-columns: 1fr; gap: 24px; }
   .use-grid, .steps3, .doc-grid, .article-grid { grid-template-columns: 1fr 1fr; }
   .facts { grid-template-columns: 1fr 1fr; }
   .fact:nth-child(3) { border-left: 0; }
