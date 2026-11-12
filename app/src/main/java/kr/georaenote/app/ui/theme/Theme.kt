@@ -24,6 +24,8 @@ object Brand {
     val Primary = Color(0xFF2563EB)
     val PrimaryPressed = Color(0xFF1D4ED8)
     val PrimarySoft = Color(0xFFEAF1FF)
+    /** 이벤트 이미지(동전) 바탕과 같은 색: 이벤트 배너·팝업 바탕 */
+    val EventBg = Color(0xFFE0EBFD)
     val Paid = Color(0xFF059669)
     val PaidSoft = Color(0xFFE6F6F0)
     val Ink = Color(0xFF0F172A)

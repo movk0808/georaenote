@@ -113,7 +113,7 @@ fun HomeScreen(vm: AppViewModel, go: (String) -> Unit, openWeb: () -> Unit) {
                 photo = R.drawable.banner_shop,
             ) { go(Routes.GUIDE) }
             Banner(
-                brush = androidx.compose.ui.graphics.SolidColor(Brand.PrimarySoft),
+                brush = androidx.compose.ui.graphics.SolidColor(Brand.EventBg),
                 small = "가입 후 첫 송금 고객 대상",
                 big = "첫 송금 완료하면\n3,000M 적립!",
                 light = false,
@@ -312,7 +312,7 @@ private fun HomePopup(onClose: () -> Unit, onToday: () -> Unit, onNever: () -> U
         Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth()) {
             Box(
                 Modifier.fillMaxWidth().clip(RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp))
-                    .background(androidx.compose.ui.graphics.SolidColor(Brand.PrimarySoft))
+                    .background(androidx.compose.ui.graphics.SolidColor(Brand.EventBg))
                     .clickable(onClick = onDetail).padding(24.dp),
             ) {
                 IconButton(onClick = onClose, modifier = Modifier.align(Alignment.TopEnd).offset(x = 12.dp, y = (-12).dp)) {
@@ -320,7 +320,7 @@ private fun HomePopup(onClose: () -> Unit, onToday: () -> Unit, onNever: () -> U
                 }
                 Image(
                     painterResource(R.drawable.event_coins), null,
-                    Modifier.align(Alignment.CenterEnd).offset(x = 8.dp).size(136.dp).clip(RoundedCornerShape(20.dp)),
+                    Modifier.align(Alignment.BottomEnd).offset(x = 4.dp, y = 8.dp).size(128.dp),
                     contentScale = ContentScale.Crop,
                 )
                 Column(Modifier.padding(top = 18.dp, bottom = 6.dp)) {

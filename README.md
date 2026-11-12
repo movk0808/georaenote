@@ -7,6 +7,12 @@
 - 안드로이드 APK: [Releases](https://github.com/movk0808/georaenote/releases/latest)
 - 실제 카드결제·본인인증·송금은 **모의 처리**입니다. 입력한 정보는 기기(브라우저) 안에만 저장되고 외부로 전송되지 않습니다.
 
+<p align="center">
+  <img src="brand/images/app-demo.gif" width="260" alt="안드로이드 앱 사용 장면: 가입, 계약 등록, 송금, 결제, 송금 완료" />
+  &nbsp;&nbsp;
+  <img src="brand/3d/hero-3d.png" width="420" alt="거래노트 3D 메인 그래픽" />
+</p>
+
 ## 폴더 구성
 
 | 폴더 | 내용 |
@@ -49,6 +55,20 @@
 색을 바꿀 때는 두 곳만 고치면 됩니다.
 - 앱: `app/src/main/java/kr/georaenote/app/ui/theme/Theme.kt`의 `Brand`
 - 웹: `web/src/styles.css`의 `:root` 변수
+
+### 그래픽·사진·영상
+
+| 자료 | 만든 방법 | 위치 |
+|---|---|---|
+| 3D 메인 그래픽(카드·입금완료 영수증·동전) | Blender 5.2 Cycles로 렌더링, 배경 투명 | `brand/3d/hero.py`(장면 스크립트), `brand/3d/hero-3d.png` |
+| 매장 사진 배너, 이벤트 동전, 매거진 썸네일 6장 | Sunra(Nano Banana Pro)로 생성 | `brand/images/`, 앱 `res/drawable-nodpi/`, 웹 `web/public/img/` |
+| 앱 사용 장면 | 실제 안드로이드 화면을 녹화해 GIF·MP4로 변환 | `brand/images/app-demo.gif`, `app-demo.mp4` |
+
+3D 그래픽을 다시 만들려면 아래처럼 실행합니다(출력 경로, 가로, 세로, 샘플 수).
+
+```bash
+"C:/Program Files/Blender Foundation/Blender 5.2/blender.exe" -b -P brand/3d/hero.py -- hero.png 1800 1012 160
+```
 
 로고는 아래가 톱니처럼 잘린 영수증 위에 입금 완료 체크를 올린 모양입니다. 안드로이드 런처 아이콘은 적응형 아이콘과 안드로이드 13 테마 아이콘(단색)을 모두 지원합니다(`app/src/main/res/drawable/ic_launcher_*.xml`).
 

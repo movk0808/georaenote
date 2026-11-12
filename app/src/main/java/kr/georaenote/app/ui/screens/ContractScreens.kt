@@ -118,6 +118,7 @@ fun ContractPayeeScreen(vm: AppViewModel, back: () -> Unit, go: (String) -> Unit
     val d = vm.contractDraft
     val type = d.type ?: ContractType.ETC
     var bankDialog by remember { mutableStateOf(false) }
+    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
     var verified by remember { mutableStateOf(false) }
     val ok = d.payeeName.isNotBlank() && d.bank.isNotBlank() && d.account.length >= 8 && d.holder.isNotBlank() &&
         (!type.needsAddress || d.address.isNotBlank()) && verified
@@ -128,12 +129,14 @@ fun ContractPayeeScreen(vm: AppViewModel, back: () -> Unit, go: (String) -> Unit
             PrimaryButton("다음", Modifier.weight(2f), enabled = ok) { go(Routes.CONTRACT_SENDER) }
         }
     }) {
+        // 키보드가 올라와도 입력칸이 가려지지 않도록 제목까지 함께 스크롤합니다
+        Column(Modifier.verticalScroll(rememberScrollState())) {
         StepTitle(1, if (type.needsAddress) "거래처와 주소를\n입력해 주세요." else "거래처 정보를\n입력해 주세요.", "대금이 입금될 거래처 계좌예요.")
-        Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+        Column(Modifier.padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
             LineField(d.payeeName, { vm.contractDraft = d.copy(payeeName = it.take(30)) }, "예) 샘플식자재", label = "거래처명(상호)")
             Box {
                 LineField(d.bank, {}, "은행 선택", label = "은행", readOnly = true, trailing = { Icon(Icons.Filled.ArrowDropDown, null) })
-                Box(Modifier.matchParentSize().clickable { bankDialog = true })
+                Box(Modifier.matchParentSize().clickable { focusManager.clearFocus(); bankDialog = true })
             }
             LineField(d.account, { vm.contractDraft = d.copy(account = it.filter(Char::isDigit).take(16)); verified = false }, "'-' 없이 숫자만", label = "계좌번호", keyboardType = KeyboardType.Number)
             LineField(d.holder, { vm.contractDraft = d.copy(holder = it.take(20)); verified = false }, "예금주명", label = "예금주",
@@ -152,6 +155,7 @@ fun ContractPayeeScreen(vm: AppViewModel, back: () -> Unit, go: (String) -> Unit
                 LineField(d.addressDetail, { vm.contractDraft = d.copy(addressDetail = it.take(40)) }, "상세주소", label = null)
             }
             Spacer(Modifier.height(20.dp))
+        }
         }
     }
 

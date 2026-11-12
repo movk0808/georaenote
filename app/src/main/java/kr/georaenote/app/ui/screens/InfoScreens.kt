@@ -202,7 +202,7 @@ private fun EventTab(go: (String) -> Unit) {
 @Composable
 private fun EventCard(e: EventItem, onClick: () -> Unit) {
     Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color.White).clickable(onClick = onClick)) {
-        Box(Modifier.fillMaxWidth().height(110.dp).background(androidx.compose.ui.graphics.SolidColor(Brand.PrimarySoft)).padding(18.dp)) {
+        Box(Modifier.fillMaxWidth().height(110.dp).background(androidx.compose.ui.graphics.SolidColor(Brand.EventBg)).padding(18.dp)) {
             Column(Modifier.align(Alignment.CenterStart)) {
                 Pill(e.tag, Brand.Dark, Color.White)
                 Spacer(Modifier.height(8.dp))

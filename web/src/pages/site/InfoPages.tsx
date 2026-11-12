@@ -128,7 +128,8 @@ export function DownloadPage() {
             <h2 style={{ fontSize: 26, fontWeight: 600, margin: '0 0 12px', letterSpacing: '-0.02em' }}>계약 등록부터 송금 완료까지<br />앱에서는 이렇게 동작해요</h2>
             <p className="sub" style={{ margin: 0 }}>거래 유형을 고르고 거래처와 증빙을 등록한 뒤, 승인된 계약으로 카드 결제하고 송금하는 실제 안드로이드 화면이에요.</p>
           </div>
-          <img className="demo-gif" style={{ justifySelf: 'center' }} src={`${base}img/app-demo.webp`} alt="안드로이드 앱 사용 장면" loading="lazy" />
+          <video className="demo-gif" style={{ justifySelf: 'center' }} src={`${base}img/app-demo.mp4`} poster={`${base}img/app-demo-poster.webp`}
+            autoPlay muted loop playsInline aria-label="안드로이드 앱 사용 장면: 가입, 계약 등록, 송금, 결제, 송금 완료" />
         </div>
         <div className="steps3">
           <div className="step3">
