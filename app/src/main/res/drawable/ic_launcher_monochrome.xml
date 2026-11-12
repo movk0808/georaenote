@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 안드로이드 13 이상 '테마 아이콘'용 단색 모양 (영수증 + 체크를 뚫어서 표현) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:pivotX="54"
+        android:pivotY="53"
+        android:scaleX="1.12"
+        android:scaleY="1.12"
+        android:translateY="1">
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:fillType="evenOdd"
+            android:pathData="M40,28h28a4,4 0,0 1,4 4v46l-6,-4 -6,4 -6,-4 -6,4 -6,-4 -6,4V32a4,4 0,0 1,4 -4z M44,37h20a2,2 0,0 1,0 4h-20a2,2 0,0 1,0 -4z M44,45h12a2,2 0,0 1,0 4h-12a2,2 0,0 1,0 -4z" />
+    </group>
+</vector>

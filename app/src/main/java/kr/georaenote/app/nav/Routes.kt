@@ -1,0 +1,45 @@
+package kr.georaenote.app.nav
+
+object Routes {
+    const val ONBOARDING = "onboarding"
+    const val HOME = "home"
+    const val GUIDE = "guide"
+    const val TERMS = "terms"
+    const val CARRIER = "carrier"
+    const val VERIFY = "verify/{carrier}"
+    const val DOC = "doc/{kind}"
+
+    const val CONTRACT_TYPE = "contract_new/type"
+    const val CONTRACT_PAYEE = "contract_new/payee"
+    const val CONTRACT_SENDER = "contract_new/sender"
+    const val CONTRACT_PROOF = "contract_new/proof"
+    const val CONTRACT_DONE = "contract_new/done"
+    const val CONTRACT = "contract/{id}"
+
+    const val TRANSFER = "transfer/{contractId}"
+    const val PAY = "pay"
+    const val TRANSFER_DONE = "transfer_done/{id}"
+    const val HISTORY = "history"
+    const val RECEIPT = "receipt/{id}"
+
+    const val BOARD = "board/{tab}"
+    const val NOTICE = "notice/{id}"
+    const val EVENT = "event/{id}"
+    const val MAGAZINE = "magazine"
+    const val ARTICLE = "article/{id}"
+    const val INSTALLMENT = "installment"
+    const val SUPPORT = "support"
+    const val SETTINGS = "settings"
+    const val MILEAGE = "mileage"
+
+    fun verify(carrier: String) = "verify/$carrier"
+    fun doc(kind: String) = "doc/$kind"
+    fun contract(id: String) = "contract/$id"
+    fun transfer(contractId: String) = "transfer/$contractId"
+    fun transferDone(id: String) = "transfer_done/$id"
+    fun receipt(id: String) = "receipt/$id"
+    fun board(tab: Int) = "board/$tab"
+    fun notice(id: Int) = "notice/$id"
+    fun event(id: Int) = "event/$id"
+    fun article(id: Int) = "article/$id"
+}

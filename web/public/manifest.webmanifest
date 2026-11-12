@@ -1,0 +1,16 @@
+{
+  "name": "거래노트 · 사업대금 카드결제",
+  "short_name": "거래노트",
+  "description": "사업대금은 카드로, 거래처에는 계좌로",
+  "lang": "ko",
+  "start_url": "./#/app",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F8FAFC",
+  "theme_color": "#1E3A5F",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

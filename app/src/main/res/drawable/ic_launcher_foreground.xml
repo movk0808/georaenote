@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 거래노트 앱 아이콘: 아래가 잘린 영수증 + 입금 완료 체크 (brand/georaenote-icon.svg 와 같은 모양, 안전 영역 66dp 안에 맞춤) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:pivotX="54"
+        android:pivotY="53"
+        android:scaleX="1.12"
+        android:scaleY="1.12"
+        android:translateY="1">
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M40,28h28a4,4 0,0 1,4 4v46l-6,-4 -6,4 -6,-4 -6,4 -6,-4 -6,4V32a4,4 0,0 1,4 -4z" />
+        <path
+            android:fillColor="#FFC7D2E0"
+            android:pathData="M44,37h20a2,2 0,0 1,0 4h-20a2,2 0,0 1,0 -4z" />
+        <path
+            android:fillColor="#FFC7D2E0"
+            android:pathData="M44,45h12a2,2 0,0 1,0 4h-12a2,2 0,0 1,0 -4z" />
+        <path
+            android:fillColor="#00000000"
+            android:strokeColor="#FF059669"
+            android:strokeWidth="5"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M44,59.5l5,5l11,-11" />
+    </group>
+</vector>
