@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { ArrowRight, ArrowUpRight, CreditCard, FileCheck2, Landmark, ShieldCheck } from 'lucide-react'
 import FeeCalculator from '../../components/FeeCalculator'
 import { FaqList } from '../../components/ui'
-import { FAQS, SITE } from '../../data/content'
+import { FAQS } from '../../data/content'
 
 /** 히어로 오른쪽 제품 미리보기: 내 카드 → 거래처 계좌 입금 영수증 */
 function FlowPreview() {
@@ -180,11 +180,11 @@ export default function Landing() {
         <div className="cta-band">
           <div>
             <h2>사업대금 결제부터 내역 관리까지</h2>
-            <p>웹에서 바로 시작하거나, 안드로이드 앱으로 결제 알림을 받아보세요.</p>
+            <p>웹에서 바로 시작하거나, 안드로이드 앱이나 아이폰 홈 화면에 설치해서 쓰세요.</p>
           </div>
           <div className="actions">
             <Link className="btn btn-on-dark" to="/app">웹에서 시작하기</Link>
-            <a className="btn btn-outline-light" href={SITE.apkUrl}>안드로이드 앱 받기</a>
+            <Link className="btn btn-outline-light" to="/install">앱 설치 (안드로이드 · 아이폰)</Link>
           </div>
         </div>
       </section>

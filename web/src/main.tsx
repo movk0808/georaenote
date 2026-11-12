@@ -24,6 +24,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="fees" element={<FeesPage />} />
           <Route path="installment" element={<InstallmentPage />} />
           <Route path="download" element={<DownloadPage />} />
+          <Route path="install" element={<DownloadPage />} />
           <Route path="terms/:kind" element={<TermsPage />} />
           <Route path="support" element={<SupportPage />} />
           <Route path="notice/:id" element={<NoticePage />} />

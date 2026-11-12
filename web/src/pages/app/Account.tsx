@@ -60,7 +60,7 @@ export function SettingsPage() {
         <Link to="/support?tab=faq">자주 묻는 질문<ChevronRight size={16} /></Link>
         <Link to="/terms/service">서비스 이용약관<ChevronRight size={16} /></Link>
         <Link to="/terms/privacy">개인정보 처리 안내<ChevronRight size={16} /></Link>
-        <Link to="/download">안드로이드 앱 · 웹앱 설치<ChevronRight size={16} /></Link>
+        <Link to="/install">안드로이드 · 아이폰 설치<ChevronRight size={16} /></Link>
       </div>
       <div className="card" style={{ display: 'flex', gap: 8 }}>
         <button className="btn btn-secondary" onClick={() => setDialog('logout')}>로그아웃</button>

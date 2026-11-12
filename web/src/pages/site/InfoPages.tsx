@@ -1,5 +1,6 @@
 import { Link, useParams } from 'react-router-dom'
-import { Download, MonitorSmartphone, Smartphone } from 'lucide-react'
+import { Download, MonitorSmartphone, Share, Smartphone, SquarePlus } from 'lucide-react'
+import { device } from '../../components/InstallHint'
 import { useEffect, useState } from 'react'
 import FeeCalculator from '../../components/FeeCalculator'
 import { GUIDE_POINTS, INSTALLMENT_MONTH, INSTALLMENT_PERIOD, INSTALLMENTS, SITE } from '../../data/content'
@@ -111,50 +112,95 @@ export function InstallmentPage() {
 
 interface InstallPromptEvent extends Event { prompt: () => Promise<void> }
 
+/** 설치 안내: 안드로이드(APK)와 아이폰(홈 화면에 추가)을 나눠서 보여줍니다 */
 export function DownloadPage() {
   const [installEvt, setInstallEvt] = useState<InstallPromptEvent | null>(null)
+  const [copied, setCopied] = useState(false)
+  const d = device()
   useEffect(() => {
     const on = (e: Event) => { e.preventDefault(); setInstallEvt(e as InstallPromptEvent) }
     window.addEventListener('beforeinstallprompt', on)
     return () => window.removeEventListener('beforeinstallprompt', on)
   }, [])
   const base = import.meta.env.BASE_URL
+  const shareUrl = 'https://movk0808.github.io/georaenote/#/install'
+  const share = async () => {
+    const data = { title: SITE.name, text: '사업대금은 카드로, 거래처에는 계좌로. 거래노트를 설치해 보세요.', url: shareUrl }
+    try {
+      if (navigator.share) { await navigator.share(data); return }
+      await navigator.clipboard.writeText(shareUrl); setCopied(true); setTimeout(() => setCopied(false), 2000)
+    } catch { /* 공유 창을 닫은 경우 */ }
+  }
+
+  const android = (
+    <section className={`install-card${d.android ? ' recommended' : ''}`} aria-labelledby="android-h">
+      <h2 id="android-h"><span className="os"><Smartphone size={20} strokeWidth={1.75} /></span>안드로이드</h2>
+      <a className="btn btn-primary" href={SITE.apkUrl}><Download size={18} />APK 내려받기 (v0.1.1 · 약 11MB)</a>
+      <ol className="install-steps">
+        <li><span><b>APK 내려받기</b>를 누르면 파일이 저장돼요. 브라우저가 '유해할 수 있는 파일'이라고 물으면 <b>다운로드</b>를 눌러요.</span></li>
+        <li><span>알림창이나 '내 파일 → 다운로드'에서 <b>georaenote.apk</b>를 눌러요.</span></li>
+        <li><span>'출처를 알 수 없는 앱' 안내가 나오면 <b>설정 → 이 출처 허용</b>을 켜고 돌아와 <b>설치</b>를 눌러요.</span></li>
+        <li><span>Play 프로텍트 경고가 뜨면 <b>세부정보 더보기 → 무시하고 설치</b>를 눌러요. Play 스토어 출시 전이라 나오는 안내예요.</span></li>
+      </ol>
+      <div className="install-qr">
+        <img src={`${base}img/qr-android.svg`} alt="안드로이드 APK 내려받기 QR 코드" />
+        <p>PC로 보고 있다면 안드로이드폰 카메라로 이 QR을 찍으세요. 바로 내려받기가 시작돼요.</p>
+      </div>
+    </section>
+  )
+
+  const iphone = (
+    <section className={`install-card${d.ios ? ' recommended' : ''}`} id="pwa" aria-labelledby="iphone-h">
+      <h2 id="iphone-h"><span className="os"><MonitorSmartphone size={20} strokeWidth={1.75} /></span>아이폰</h2>
+      {d.ios && d.standalone && <div className="notice-box">이미 홈 화면에 설치된 거래노트로 보고 있어요</div>}
+      {d.ios && d.inApp && <div className="warn-box">카카오톡 같은 앱 안의 브라우저에서는 홈 화면에 추가할 수 없어요. 오른쪽 아래(또는 위) 메뉴에서 <b>Safari로 열기</b>를 먼저 눌러 주세요.</div>}
+      {installEvt
+        ? <button className="btn btn-primary" onClick={() => installEvt.prompt()}>이 기기에 설치하기</button>
+        : <Link className="btn btn-primary" to="/app">웹앱 바로 열기</Link>}
+      <ol className="install-steps">
+        <li><span>아이폰 <b>Safari</b>로 이 페이지를 열어요(QR을 찍거나 링크를 눌러요).</span></li>
+        <li><span>화면 아래 <Share size={15} className="inline-ic" /> <b>공유</b> 버튼을 눌러요.</span></li>
+        <li><span>목록을 내려 <SquarePlus size={15} className="inline-ic" /> <b>홈 화면에 추가</b> → 오른쪽 위 <b>추가</b>를 눌러요.</span></li>
+        <li><span>홈 화면의 <b>거래노트</b> 아이콘을 누르면 주소창 없이 앱처럼 열려요. App Store 설치는 필요 없어요.</span></li>
+      </ol>
+      <div className="install-qr">
+        <img src={`${base}img/qr-iphone.svg`} alt="아이폰 설치 안내 페이지 QR 코드" />
+        <div style={{ display: 'grid', gap: 10 }}>
+          <p>아이폰 카메라로 QR을 찍으면 이 안내 페이지가 열려요.</p>
+          <button className="btn btn-secondary btn-sm" onClick={share}>{copied ? '링크를 복사했어요' : '설치 링크 공유하기'}</button>
+        </div>
+      </div>
+    </section>
+  )
+
   return (
     <>
-      <PageHead title="앱 다운로드" sub="안드로이드 앱으로 쓰거나, 웹앱으로 홈 화면에 추가해서 쓸 수 있어요" />
+      <PageHead title="거래노트 설치하기" sub="안드로이드는 앱 파일(APK)로, 아이폰은 Safari에서 홈 화면에 추가해서 써요" />
       <div className="container">
-        <div className="split-head" style={{ alignItems: 'center' }}>
+        <div className="install-grid">
+          {d.ios ? <>{iphone}{android}</> : <>{android}{iphone}</>}
+        </div>
+
+        <div className="split-head" style={{ alignItems: 'center', marginTop: 72 }}>
           <div>
-            <h2 style={{ fontSize: 26, fontWeight: 600, margin: '0 0 12px', letterSpacing: '-0.02em' }}>계약 등록부터 송금 완료까지<br />앱에서는 이렇게 동작해요</h2>
-            <p className="sub" style={{ margin: 0 }}>거래 유형을 고르고 거래처와 증빙을 등록한 뒤, 승인된 계약으로 카드 결제하고 송금하는 실제 안드로이드 화면이에요.</p>
+            <h2 style={{ fontSize: 26, fontWeight: 600, margin: '0 0 12px', letterSpacing: '-0.02em' }}>계약 등록부터 송금 완료까지<br />이렇게 동작해요</h2>
+            <p className="sub" style={{ margin: '0 0 20px' }}>거래 유형을 고르고 거래처와 증빙을 등록한 뒤, 승인된 계약으로 카드 결제하고 송금하는 실제 화면이에요. 아이폰 웹앱도 같은 순서로 동작해요.</p>
+            <Link className="btn btn-secondary" to="/app">지금 웹에서 체험하기</Link>
           </div>
           <video className="demo-gif" style={{ justifySelf: 'center' }} src={`${base}img/app-demo.mp4`} poster={`${base}img/app-demo-poster.webp`}
-            autoPlay muted loop playsInline aria-label="안드로이드 앱 사용 장면: 가입, 계약 등록, 송금, 결제, 송금 완료" />
+            autoPlay muted loop playsInline aria-label="거래노트 사용 장면: 가입, 계약 등록, 송금, 결제, 송금 완료" />
         </div>
-        <div className="steps3">
-          <div className="step3">
-            <span className="icon"><Smartphone size={20} strokeWidth={1.75} /></span>
-            <h3>안드로이드 앱</h3>
-            <p>APK 파일을 내려받아 설치해요. 설치할 때 '출처를 알 수 없는 앱' 허용이 필요할 수 있어요. Play 스토어 출시 전 체험판이에요.</p>
-            <a className="btn btn-primary" href={SITE.apkUrl}><Download size={18} />APK 내려받기</a>
+
+        <div className="card" style={{ marginTop: 48, display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+          <img src={`${base}icon.svg`} alt="" width={40} height={40} />
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <strong style={{ fontWeight: 600 }}>로고·아이콘</strong>
+            <div className="sub" style={{ fontSize: 14 }}>홍보물이나 안내문에 쓸 수 있는 거래노트 로고 파일이에요</div>
           </div>
-          <div className="step3" id="pwa">
-            <span className="icon"><MonitorSmartphone size={20} strokeWidth={1.75} /></span>
-            <h3>웹앱 (모든 기기)</h3>
-            <p>브라우저 메뉴에서 '홈 화면에 추가' 또는 '앱 설치'를 누르면 앱처럼 쓸 수 있어요. 아이폰은 Safari 공유 버튼 → 홈 화면에 추가.</p>
-            {installEvt
-              ? <button className="btn btn-primary" onClick={() => installEvt.prompt()}>이 기기에 설치하기</button>
-              : <Link className="btn btn-secondary" to="/app">웹앱 열기</Link>}
-          </div>
-          <div className="step3">
-            <span className="icon"><img src={`${base}icon.svg`} alt="" width={28} height={28} /></span>
-            <h3>로고·아이콘</h3>
-            <p>거래노트 로고와 앱 아이콘 파일이에요.</p>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <a className="btn btn-secondary btn-sm" href={`${base}icon-512.png`} download="georaenote-icon-512.png">아이콘 PNG</a>
-              <a className="btn btn-secondary btn-sm" href={`${base}icon.svg`} download="georaenote-icon.svg">아이콘 SVG</a>
-              <a className="btn btn-secondary btn-sm" href={`${base}logo.svg`} download="georaenote-logo.svg">로고 SVG</a>
-            </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <a className="btn btn-secondary btn-sm" href={`${base}icon-512.png`} download="georaenote-icon-512.png">아이콘 PNG</a>
+            <a className="btn btn-secondary btn-sm" href={`${base}icon.svg`} download="georaenote-icon.svg">아이콘 SVG</a>
+            <a className="btn btn-secondary btn-sm" href={`${base}logo.svg`} download="georaenote-logo.svg">로고 SVG</a>
           </div>
         </div>
       </div>

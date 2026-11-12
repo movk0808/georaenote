@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -13,14 +15,31 @@ android {
         applicationId = "kr.georaenote.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.1.1"
+    }
+
+    // 배포용 서명: keystore/keystore.properties 가 있을 때만 씁니다(이 폴더는 GitHub에 올리지 않아요).
+    val keyProps = Properties().apply {
+        val f = rootProject.file("keystore/keystore.properties")
+        if (f.exists()) f.inputStream().use { load(it) }
+    }
+    signingConfigs {
+        if (keyProps.isNotEmpty()) {
+            create("release") {
+                storeFile = rootProject.file("keystore/georaenote-release.jks")
+                storePassword = keyProps.getProperty("storePassword")
+                keyAlias = keyProps.getProperty("keyAlias")
+                keyPassword = keyProps.getProperty("keyPassword")
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+            signingConfig = signingConfigs.findByName("release")
         }
     }
     compileOptions {

@@ -10,3 +10,6 @@ web/node_modules/
 web/dist/
 *.tsbuildinfo
 *.apk
+keystore/
+*.jks
+*.keystore

@@ -4,7 +4,8 @@
 한 저장소에 **안드로이드 앱**, **웹사이트 + 웹앱**, **로고**가 함께 들어 있고, 셋 다 같은 색·규칙(이용료, 마일리지)을 씁니다.
 
 - 웹사이트·웹앱: https://movk0808.github.io/georaenote/
-- 안드로이드 APK: [Releases](https://github.com/movk0808/georaenote/releases/latest)
+- 안드로이드 APK: [Releases](https://github.com/movk0808/georaenote/releases/latest) (배포용 서명)
+- 아이폰: Safari에서 홈 화면에 추가하는 웹앱
 - 실제 카드결제·본인인증·송금은 **모의 처리**입니다. 입력한 정보는 기기(브라우저) 안에만 저장되고 외부로 전송되지 않습니다.
 
 <p align="center">
@@ -12,6 +13,24 @@
   &nbsp;&nbsp;
   <img src="brand/3d/hero-3d.png" width="420" alt="거래노트 3D 메인 그래픽" />
 </p>
+
+## 설치 방법
+
+설치 안내 페이지: https://movk0808.github.io/georaenote/#/install (QR 코드와 공유 버튼 포함)
+
+**안드로이드**
+1. [APK 내려받기](https://github.com/movk0808/georaenote/releases/latest/download/georaenote.apk)
+2. 내려받은 `georaenote.apk`를 눌러 설치. '출처를 알 수 없는 앱' 안내가 나오면 설정에서 허용
+3. Play 프로텍트 경고가 뜨면 '세부정보 더보기 → 무시하고 설치' (Play 스토어 출시 전이라 나오는 안내)
+
+v0.1.0을 설치한 적이 있으면 서명이 달라져서 덮어쓰기가 안 돼요. 기존 앱을 지운 뒤 설치하세요.
+
+**아이폰**: 아이폰은 APK를 설치할 수 없어서 웹앱으로 씁니다.
+1. Safari로 설치 안내 페이지를 열기(카카오톡 안에서 열렸다면 'Safari로 열기')
+2. 공유 버튼 → '홈 화면에 추가' → '추가'
+3. 홈 화면의 거래노트 아이콘을 누르면 주소창 없이 앱처럼 실행
+
+정식 아이폰 앱(App Store·TestFlight)은 Mac, Xcode, Apple 개발자 계정(연 $99)이 있어야 만들 수 있어요. 그때는 이 웹앱을 Capacitor로 감싸서 iOS 앱으로 빌드하면 됩니다.
 
 ## 폴더 구성
 

@@ -381,6 +381,35 @@ img, svg { display: block; }
 .spinner { width: 32px; height: 32px; border-radius: 50%; border: 3px solid var(--primary-soft); border-top-color: var(--primary); animation: spin 800ms linear infinite; }
 .toast { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 14px; z-index: 70; animation: rise 200ms var(--ease); }
 
+/* 아이폰 설치 안내 */
+.install-hint {
+  position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 40;
+  display: flex; gap: 12px; align-items: flex-start; padding: 14px 14px 14px 16px; border-radius: var(--r-card);
+  background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow-float); animation: rise 300ms var(--ease);
+}
+.install-hint img { width: 44px; height: 44px; border-radius: 10px; flex-shrink: 0; }
+.install-hint strong { font-weight: 600; font-size: 15px; }
+.install-hint p { margin: 2px 0 6px; font-size: 13px; color: var(--sub); line-height: 1.5; }
+.install-hint a { font-size: 13px; color: var(--primary); font-weight: 500; }
+.install-hint button { border: 0; background: none; color: var(--muted); padding: 2px; }
+.app-shell ~ .install-hint, .app-shell .install-hint { bottom: calc(76px + env(safe-area-inset-bottom)); }
+.inline-ic { display: inline; vertical-align: -2px; color: var(--primary); }
+
+/* 설치 페이지 */
+.install-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.install-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-panel); padding: 28px; display: grid; gap: 18px; align-content: start; }
+.install-card.recommended { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); }
+.install-card h2 { margin: 0; font-size: 22px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+.install-card .os { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--raised); color: var(--navy); }
+.install-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; counter-reset: st; }
+.install-steps li { display: grid; grid-template-columns: 28px 1fr; gap: 12px; align-items: start; font-size: 14px; color: var(--sub); line-height: 1.6; }
+.install-steps li::before { counter-increment: st; content: counter(st); width: 28px; height: 28px; border-radius: 50%; background: var(--navy); color: #fff; display: grid; place-items: center; font-size: 13px; font-weight: 600; }
+.install-steps b { color: var(--ink); font-weight: 600; }
+.install-qr { display: flex; gap: 16px; align-items: center; padding: 16px; border-radius: var(--r-card); background: var(--bg); }
+.install-qr img { width: 112px; height: 112px; background: #fff; border-radius: 8px; padding: 6px; flex-shrink: 0; }
+.install-qr p { margin: 0; font-size: 13px; color: var(--sub); }
+.warn-box { background: var(--warn-soft); color: var(--warn); border-radius: var(--r-control); padding: 12px 14px; font-size: 13px; line-height: 1.6; }
+
 .enter { animation: rise 360ms var(--ease) both; }
 @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
@@ -413,7 +442,8 @@ img, svg { display: block; }
   .hero .lead { font-size: 16px; }
   .section { padding: 64px 0; }
   .section-head h2 { font-size: 28px; }
-  .use-grid, .steps3, .doc-grid, .article-grid, .howto { grid-template-columns: 1fr; }
+  .use-grid, .steps3, .doc-grid, .article-grid, .howto, .install-grid { grid-template-columns: 1fr; }
+  .install-card { padding: 22px 18px; }
   .cta-band { grid-template-columns: 1fr; padding: 32px 24px; }
   .cta-band h2 { font-size: 24px; }
   .footer-grid { grid-template-columns: 1fr; }

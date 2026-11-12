@@ -2,6 +2,7 @@ import { ReactNode, useEffect, useState } from 'react'
 import { Link, NavLink, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { ChevronLeft, Coins, Headphones, History, House, Menu, Settings, X, FilePlus2 } from 'lucide-react'
 import { refresh, useStore } from '../lib/store'
+import InstallHint from './InstallHint'
 import { SITE } from '../data/content'
 
 const logoSrc = `${import.meta.env.BASE_URL}icon.svg`
@@ -20,7 +21,7 @@ const SITE_LINKS = [
   { to: '/fees', label: '수수료안내' },
   { to: '/magazine', label: '매거진' },
   { to: '/support', label: '고객센터' },
-  { to: '/download', label: '앱 다운로드' },
+  { to: '/install', label: '앱 설치' },
 ]
 
 function ScrollTop() {
@@ -67,6 +68,7 @@ export function SiteLayout() {
       </header>
       <main><Outlet /></main>
       <SiteFooter />
+      <InstallHint />
     </>
   )
 }
@@ -101,8 +103,8 @@ function SiteFooter() {
           <div>
             <h4>앱</h4>
             <ul>
-              <li><Link to="/download">안드로이드 앱 내려받기</Link></li>
-              <li><Link to="/download#pwa">웹앱으로 설치하기</Link></li>
+              <li><Link to="/install">안드로이드 앱 내려받기</Link></li>
+              <li><Link to="/install">아이폰에 설치하기</Link></li>
               <li><Link to="/terms/service">서비스 이용약관</Link></li>
               <li><Link to="/terms/privacy">개인정보 처리 안내</Link></li>
             </ul>
@@ -156,6 +158,7 @@ export function AppLayout() {
       <div className="app-main">
         <Outlet />
       </div>
+      <InstallHint />
       <nav className="tabbar" aria-label="하단 메뉴">
         {TAB_LINKS.map(({ to, label, icon: Icon, end }) => (
           <NavLink key={to} to={to} end={end}><Icon size={20} strokeWidth={1.75} />{label}</NavLink>
