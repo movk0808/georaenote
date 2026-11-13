@@ -125,16 +125,56 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         io(onDone) { api.requestCode(phone) }
     }
 
-    fun verify(name: String, phone: String, carrier: String, birth: String, code: String, expected: String, onDone: (Result<Unit>) -> Unit) {
+    /**
+     * 휴대폰 본인인증.
+     * link = false: 이 번호로 인증한 계정으로 로그인(없으면 새로 가입)
+     * link = true : 지금 로그인한 계정(바로 시작)에 본인인증을 붙임 — 계약 등록·결제 전에 1회
+     */
+    fun verify(name: String, phone: String, carrier: String, birth: String, code: String, expected: String, link: Boolean = false, onDone: (Result<Unit>) -> Unit) {
         val api = remote
         if (api == null) {
             if (code != expected) { onDone(Result.failure(IllegalStateException("인증번호가 일치하지 않아요"))); return }
-            val u = User(name.trim(), phone.filter(Char::isDigit), carrier, birth)
+            val nick = user?.nickname?.ifBlank { null } ?: "사장님${phone.takeLast(4)}"
+            val u = User(name.trim(), phone.filter(Char::isDigit), carrier, birth, nick, verified = true)
             repo.saveUser(u); user = u
             onDone(Result.success(Unit)); return
         }
-        io(onDone) { api.verify(phone.filter(Char::isDigit), code, name.trim(), birth, carrier); reloadRemote() }
+        io(onDone) {
+            if (link) api.verifyLink(phone.filter(Char::isDigit), code, name.trim(), birth, carrier)
+            else api.verify(phone.filter(Char::isDigit), code, name.trim(), birth, carrier)
+            reloadRemote()
+        }
     }
+
+    /** 바로 시작: 이름·번호 없이 자동 닉네임으로 가입 */
+    fun quickStart(onDone: (Result<Unit>) -> Unit) {
+        val api = remote
+        if (api == null) {
+            val n = listOf("멋진사장님", "든든한사장님", "부지런한사장님", "똑똑한사장님").random() + Random.nextInt(100, 1000)
+            val u = User("", "", "", "", n, verified = false)
+            repo.saveUser(u); user = u
+            onDone(Result.success(Unit)); return
+        }
+        io(onDone) { api.quickStart(); reloadRemote() }
+    }
+
+    fun updateNickname(nickname: String, onDone: (Result<Unit>) -> Unit) {
+        val api = remote
+        if (api == null) {
+            if (!Regex("^[가-힣A-Za-z0-9]{2,12}$").matches(nickname.trim())) {
+                onDone(Result.failure(IllegalStateException("닉네임은 한글·영문·숫자 2~12자로 정해 주세요"))); return
+            }
+            user?.let { val u = it.copy(nickname = nickname.trim()); repo.saveUser(u); user = u }
+            onDone(Result.success(Unit)); return
+        }
+        io(onDone) { api.updateNickname(nickname.trim()); reloadRemote() }
+    }
+
+    /** 계약 등록·결제 전에 본인인증이 필요한지 */
+    val needsVerify: Boolean get() = user?.verified == false
+
+    /** 본인인증을 마치면 돌아갈 화면 */
+    var afterVerify: String? = null
 
     fun logout() {
         val api = remote

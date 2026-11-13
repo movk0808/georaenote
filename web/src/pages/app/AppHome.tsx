@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { ChevronRight, CreditCard, Headphones, HelpCircle, Newspaper, Plus, Sparkles } from 'lucide-react'
+import { ChevronRight, CreditCard, Headphones, HelpCircle, Newspaper, Plus, ShieldCheck, Sparkles } from 'lucide-react'
 import { AppPage } from '../../components/Layouts'
 import { StatusPill, TypeBadge } from '../../components/ui'
 import { mileageBalance, useStore } from '../../lib/store'
@@ -14,7 +14,14 @@ export default function AppHome() {
     .reduce((a, t) => a + t.amount, 0)
 
   return (
-    <AppPage title={`${s.user?.name ?? ''} 사장님`}>
+    <AppPage title={`${s.user?.nickname ?? ''}님`}>
+      {s.user && !s.user.verified && (
+        <Link to="/app/verify?next=/app" className="card" style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, borderColor: 'var(--primary)' }}>
+          <ShieldCheck size={22} color="var(--primary)" style={{ flexShrink: 0 }} />
+          <div style={{ flex: 1 }}><strong style={{ fontWeight: 600 }}>본인인증 한 번이면 계약 등록과 결제를 할 수 있어요</strong><div className="sub" style={{ fontSize: 13 }}>인증한 번호로 안드로이드 앱에서도 같은 계정으로 로그인돼요</div></div>
+          <ChevronRight size={18} className="muted" />
+        </Link>
+      )}
       <div className="dash">
         <div style={{ display: 'grid', gap: 20 }}>
           <section className="card" aria-labelledby="contracts-h">

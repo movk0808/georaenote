@@ -9,7 +9,7 @@ const Head = ({ title, sub }: { title: string; sub?: string }) => <header classN
 // ---------------- 1:1 문의 ----------------
 export function InquiriesPage() {
   const list = useQuery(async () => {
-    const { data, error } = await adb!.from('inquiries').select('*, profiles(name, business_name, phone)').order('created_at', { ascending: false }).limit(200)
+    const { data, error } = await adb!.from('inquiries').select('*, profiles(name, nickname, business_name, phone)').order('created_at', { ascending: false }).limit(200)
     if (error) throw error
     return data as Row[]
   })
@@ -25,7 +25,7 @@ export function InquiriesPage() {
         {rows.map((r) => (
           <div key={r.id} className="adm-card">
             <div className="adm-card-head">
-              <div><strong style={{ fontWeight: 600 }}>{r.profiles?.business_name ?? r.profiles?.name}</strong> <span className="muted" style={{ fontSize: 13 }}>{r.profiles?.name} · {r.profiles?.phone}</span></div>
+              <div><strong style={{ fontWeight: 600 }}>{r.profiles?.business_name ?? r.profiles?.nickname}</strong> <span className="muted" style={{ fontSize: 13 }}>{r.profiles?.name} · {r.profiles?.phone}</span></div>
               <span className={`pill ${r.status === 'OPEN' ? 'pill-review' : 'pill-ok'}`}>{r.status === 'OPEN' ? '답변 대기' : '답변 완료'}</span>
             </div>
             <p style={{ margin: '0 0 4px', whiteSpace: 'pre-line' }}>{r.message}</p>
@@ -49,7 +49,7 @@ export function InquiriesPage() {
 // ---------------- 후기 ----------------
 export function ReviewsPage() {
   const list = useQuery(async () => {
-    const { data, error } = await adb!.from('reviews').select('*, profiles(name, business_name)').order('created_at', { ascending: false }).limit(300)
+    const { data, error } = await adb!.from('reviews').select('*, profiles(name, nickname, business_name)').order('created_at', { ascending: false }).limit(300)
     if (error) throw error
     return data as Row[]
   })

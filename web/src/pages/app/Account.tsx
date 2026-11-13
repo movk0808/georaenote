@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ChevronRight, Phone, Send } from 'lucide-react'
 import { AppPage } from '../../components/Layouts'
-import { logout, mileageBalance, MODE, sendInquiry, setNotifications, useStore, withdraw } from '../../lib/store'
+import { logout, mileageBalance, MODE, sendInquiry, setNotifications, updateNickname, useStore, withdraw } from '../../lib/store'
 import { Confirm, toast } from '../../components/ui'
 import { dateTime, mileage, phone } from '../../lib/format'
 import { FAQS, SITE } from '../../data/content'
@@ -43,11 +43,44 @@ export function SettingsPage() {
   const navigate = useNavigate()
   const [dialog, setDialog] = useState<'logout' | 'withdraw' | null>(null)
   const u = s.user!
+  const [nick, setNick] = useState<string | null>(null)
+  const saveNick = () => {
+    if (nick === null) return
+    updateNickname(nick).then(() => { setNick(null); toast('닉네임을 바꿨어요') }).catch((e: Error) => toast(e.message))
+  }
   return (
     <AppPage title="설정" narrow>
       <div className="card">
-        <div style={{ fontWeight: 600, fontSize: 18 }}>{u.name} 사장님</div>
-        <div className="sub" style={{ fontSize: 14 }}>{phone(u.phone)} · {u.carrier}</div>
+        <span className="sub" style={{ fontSize: 13 }}>닉네임</span>
+        {nick === null ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <div style={{ fontWeight: 600, fontSize: 18 }}>{u.nickname}</div>
+            <button className="btn btn-ghost btn-sm" onClick={() => setNick(u.nickname)}>바꾸기</button>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+            <input className="input" value={nick} autoFocus maxLength={12} onChange={(e) => setNick(e.target.value)} aria-label="새 닉네임" style={{ height: 40 }} />
+            <button className="btn btn-secondary btn-sm" style={{ height: 40 }} onClick={() => setNick(null)}>취소</button>
+            <button className="btn btn-primary btn-sm" style={{ height: 40 }} onClick={saveNick}>저장</button>
+          </div>
+        )}
+        <p className="hint" style={{ margin: '6px 0 0' }}>한글·영문·숫자 2~12자</p>
+      </div>
+      <div className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        {u.verified ? (
+          <div>
+            <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}><span className="pill pill-ok">본인인증 완료</span>{u.name}</div>
+            <div className="sub" style={{ fontSize: 14, marginTop: 4 }}>{phone(u.phone)} · {u.carrier}</div>
+          </div>
+        ) : (
+          <>
+            <div>
+              <div style={{ fontWeight: 600 }}>본인인증 전이에요</div>
+              <div className="sub" style={{ fontSize: 14 }}>계약 등록과 결제 전에 한 번만 받아요</div>
+            </div>
+            <Link className="btn btn-primary btn-sm" to="/app/verify?next=/app/settings">본인인증</Link>
+          </>
+        )}
       </div>
       <div className="card">
         <label className="check" style={{ justifyContent: 'space-between' }}>

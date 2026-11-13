@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -46,6 +47,7 @@ import kr.georaenote.app.ui.components.BottomBar
 import kr.georaenote.app.ui.components.Divider
 import kr.georaenote.app.ui.components.PrimaryButton
 import kr.georaenote.app.ui.components.LineField
+import kr.georaenote.app.ui.components.GrayButton
 import kr.georaenote.app.ui.components.Screen
 import kr.georaenote.app.ui.theme.Brand
 import kotlin.random.Random
@@ -59,13 +61,13 @@ fun TermsScreen(back: () -> Unit, go: (String) -> Unit) {
     val all = service && privacy && marketing
 
     Screen(onBack = back, bottom = {
-        BottomBar { PrimaryButton("휴대폰 본인인증", enabled = service && privacy) { go(Routes.CARRIER) } }
+        BottomBar { PrimaryButton("동의하고 계속", enabled = service && privacy) { go(Routes.START) } }
     }) {
         Column(Modifier.padding(horizontal = 20.dp)) {
             Spacer(Modifier.height(24.dp))
-            Text("휴대폰 번호로\n본인인증을 해주세요.", style = androidx.compose.material3.MaterialTheme.typography.headlineMedium, color = Brand.Ink)
+            Text("${Content.SERVICE_NAME}\n시작하기", style = androidx.compose.material3.MaterialTheme.typography.headlineMedium, color = Brand.Ink)
             Spacer(Modifier.height(10.dp))
-            Text("${Content.SERVICE_NAME}는 휴대폰 본인인증 한 번으로\n회원가입이 끝나요!", fontSize = 14.sp, color = Brand.Faint)
+            Text("약관에 동의하면 바로 둘러볼 수 있어요.\n계약 등록과 결제 전에만 본인인증을 한 번 받아요", fontSize = 14.sp, color = Brand.Faint)
             Spacer(Modifier.height(40.dp))
             Row(
                 Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Brand.Background)
@@ -120,12 +122,16 @@ fun DocScreen(kind: String, back: () -> Unit) {
 
 /** 통신사 선택. 실제 서비스에서는 본인인증 기관(PASS 등) 연동 화면으로 대체됩니다. */
 @Composable
-fun CarrierScreen(back: () -> Unit, go: (String) -> Unit) {
+fun CarrierScreen(mode: String, back: () -> Unit, go: (String) -> Unit) {
     val carriers = listOf("SKT", "KT", "LG U+", "SKT\n알뜰폰", "KT\n알뜰폰", "LG U+\n알뜰폰")
     Screen(onBack = back) {
         Column(Modifier.padding(horizontal = 20.dp)) {
             Spacer(Modifier.height(20.dp))
-            Text("본인인증", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Brand.Primary)
+            Text(if (mode == "link") "본인인증 1회" else "휴대폰 번호로 로그인", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Brand.Primary)
+            if (mode == "link") {
+                Spacer(Modifier.height(8.dp))
+                Text("카드는 본인 명의만 쓸 수 있어서 계약 등록과 결제 전에 한 번만 받아요. 인증한 번호로 웹에서도 같은 계정으로 로그인돼요", fontSize = 13.sp, color = Brand.SubInk, lineHeight = 19.sp)
+            }
             Spacer(Modifier.height(10.dp))
             Text("이용 중인 통신사를\n선택해 주세요", fontSize = 26.sp, color = Brand.Ink, lineHeight = 36.sp, fontWeight = FontWeight.Medium)
             Spacer(Modifier.height(36.dp))
@@ -136,7 +142,7 @@ fun CarrierScreen(back: () -> Unit, go: (String) -> Unit) {
                             Modifier.weight(1f).aspectRatio(1f).clip(RoundedCornerShape(12.dp))
                                 .background(if (rowIdx == 0) Color.White else Brand.Background)
                                 .border(1.dp, Brand.Line, RoundedCornerShape(12.dp))
-                                .clickable { go(Routes.verify(c.replace("\n", " "))) },
+                                .clickable { go(Routes.verify(mode, c.replace("\n", " "))) },
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(c, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Brand.Ink, textAlign = TextAlign.Center)
@@ -156,7 +162,7 @@ fun CarrierScreen(back: () -> Unit, go: (String) -> Unit) {
 
 /** 이름·생년월일·휴대폰 입력과 인증번호 확인(체험용 인증번호 표시) */
 @Composable
-fun VerifyScreen(vm: AppViewModel, carrier: String, back: () -> Unit, onDone: () -> Unit) {
+fun VerifyScreen(vm: AppViewModel, mode: String, carrier: String, back: () -> Unit, onDone: () -> Unit) {
     var name by rememberSaveable { mutableStateOf("") }
     var birth by rememberSaveable { mutableStateOf("") }
     var phone by rememberSaveable { mutableStateOf("") }
@@ -177,7 +183,7 @@ fun VerifyScreen(vm: AppViewModel, carrier: String, back: () -> Unit, onDone: ()
             } else {
                 PrimaryButton(if (busy) "확인 중" else "확인", enabled = code.length == 6 && !busy) {
                     busy = true; error = null
-                    vm.verify(name, phone, carrier, birth, code, demoCode) { r -> busy = false; r.onSuccess { onDone() }.onFailure { error = it.message } }
+                    vm.verify(name, phone, carrier, birth, code, demoCode, link = mode == "link") { r -> busy = false; r.onSuccess { onDone() }.onFailure { error = it.message } }
                 }
             }
         }
@@ -202,6 +208,30 @@ fun VerifyScreen(vm: AppViewModel, carrier: String, back: () -> Unit, onDone: ()
                 Text("인증번호 다시 받기", Modifier.clickable { code = ""; vm.requestCode(phone) { r -> r.onSuccess { demoCode = it }.onFailure { error = it.message } } }, fontSize = 13.sp, color = Brand.SubInk)
             }
             error?.let { Text(it, color = Brand.Danger, fontSize = 13.sp) }
+        }
+    }
+}
+
+/** 시작 방법 고르기: 바로 시작(자동 닉네임) 또는 휴대폰 번호로 로그인. 구글·카카오는 키를 받으면 여기에 추가해요 */
+@Composable
+fun StartScreen(vm: AppViewModel, back: () -> Unit, go: (String) -> Unit, onDone: () -> Unit) {
+    var busy by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    Screen(onBack = back, bottom = {
+        Column(Modifier.fillMaxWidth().background(Color.White).navigationBarsPadding().padding(horizontal = 20.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            PrimaryButton(if (busy) "준비 중" else "바로 시작하기", enabled = !busy) {
+                busy = true; error = null
+                vm.quickStart { r -> busy = false; r.onSuccess { onDone() }.onFailure { error = it.message } }
+            }
+            GrayButton("휴대폰 번호로 로그인", Modifier.fillMaxWidth()) { go(Routes.carrier("login")) }
+        }
+    }) {
+        Column(Modifier.padding(horizontal = 20.dp)) {
+            Spacer(Modifier.height(24.dp))
+            Text("어떻게 시작할까요", style = androidx.compose.material3.MaterialTheme.typography.headlineMedium, color = Brand.Ink)
+            Spacer(Modifier.height(10.dp))
+            Text("처음이라면 바로 시작해 보세요. 닉네임은 자동으로 정해지고 설정에서 바꿀 수 있어요.\n\n이미 본인인증을 한 분은 휴대폰 번호로 로그인하면 웹과 같은 계정으로 이어져요.", fontSize = 14.sp, color = Brand.SubInk, lineHeight = 21.sp)
+            error?.let { Spacer(Modifier.height(16.dp)); Text(it, color = Brand.Danger, fontSize = 13.sp) }
         }
     }
 }

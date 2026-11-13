@@ -140,6 +140,7 @@ fun SupportScreen(back: () -> Unit, go: (String) -> Unit, onInquiry: (String) ->
 fun SettingsScreen(vm: AppViewModel, back: () -> Unit, go: (String) -> Unit, onLoggedOut: () -> Unit) {
     val context = LocalContext.current
     var confirmLogout by remember { mutableStateOf(false) }
+    var editNick by remember { mutableStateOf<String?>(null) }
     var confirmWithdraw by remember { mutableStateOf(false) }
     Screen("설정", back, background = Brand.Background) {
         Column(Modifier.verticalScroll(rememberScrollState()).padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -152,18 +153,49 @@ fun SettingsScreen(vm: AppViewModel, back: () -> Unit, go: (String) -> Unit, onL
                     Spacer(Modifier.width(14.dp))
                     Column(Modifier.weight(1f)) {
                         if (u != null) {
-                            Text("${u.name} 사장님", fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Brand.Ink)
-                            Text("${Format.phone(u.phone)} · ${u.carrier}", fontSize = 13.sp, color = Brand.Faint)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(u.displayName, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Brand.Ink)
+                                Spacer(Modifier.width(6.dp))
+                                Text("바꾸기", Modifier.clickable { editNick = u.nickname }.padding(4.dp), fontSize = 13.sp, color = Brand.Primary, fontWeight = FontWeight.SemiBold)
+                            }
+                            Text(
+                                if (u.verified && u.phone.isNotBlank()) "본인인증 완료 · ${u.name} · ${Format.phone(u.phone)}" else if (u.verified) "본인인증 완료" else "본인인증 전 · 계약 등록과 결제 전에 한 번 받아요",
+                                fontSize = 13.sp, color = if (u.verified) Brand.Paid else Brand.Faint,
+                            )
                         } else {
                             Text("로그인이 필요해요", fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Brand.Ink)
-                            Text("본인인증 한 번으로 시작할 수 있어요", fontSize = 13.sp, color = Brand.Faint)
+                            Text("바로 시작하거나 휴대폰 번호로 로그인하세요", fontSize = 13.sp, color = Brand.Faint)
                         }
                     }
                 }
                 if (u == null) {
                     Spacer(Modifier.height(14.dp))
-                    PrimaryButton("본인인증하고 시작하기", height = 48.dp) { go(Routes.TERMS) }
+                    PrimaryButton("시작하기", height = 48.dp) { go(Routes.TERMS) }
+                } else if (!u.verified) {
+                    Spacer(Modifier.height(14.dp))
+                    PrimaryButton("본인인증 하기", height = 48.dp) { vm.afterVerify = Routes.SETTINGS; go(Routes.carrier("link")) }
                 }
+            }
+            editNick?.let { current ->
+                AlertDialog(
+                    onDismissRequest = { editNick = null },
+                    title = { Text("닉네임 바꾸기") },
+                    text = {
+                        Column {
+                            androidx.compose.material3.OutlinedTextField(current, { editNick = it.take(12) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                            Text("한글·영문·숫자 2~12자", fontSize = 12.sp, color = Brand.Faint, modifier = Modifier.padding(top = 6.dp))
+                        }
+                    },
+                    confirmButton = {
+                        TextButton({
+                            vm.updateNickname(current) { r ->
+                                r.onSuccess { editNick = null }.onFailure { android.widget.Toast.makeText(context, it.message, android.widget.Toast.LENGTH_LONG).show() }
+                            }
+                        }) { Text("저장") }
+                    },
+                    dismissButton = { TextButton({ editNick = null }) { Text("취소") } },
+                    containerColor = Color.White,
+                )
             }
             if (vm.loggedIn) {
                 Card(padding = androidx.compose.foundation.layout.PaddingValues(vertical = 4.dp)) {

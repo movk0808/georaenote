@@ -6,6 +6,8 @@ import { today } from './format'
 import { QUIZZES } from '../data/content'
 import { callFunction, errText, REMOTE, sb } from './supabase'
 
+export { SOCIAL } from './supabase'
+
 /**
  * 웹앱 데이터 저장소. 두 가지 모드로 동작해요.
  * - 서버 모드(REMOTE): Supabase에 저장. 같은 휴대폰 번호로 로그인하면 안드로이드 앱과 같은 데이터를 봐요.
@@ -114,10 +116,19 @@ async function loadRemote() {
       sb.from('mileage_ledger').select('amount, reason, created_at').eq('user_id', session.user.id).order('created_at', { ascending: false }).limit(200),
       sb.from('quiz_answers').select('day').eq('user_id', session.user.id).eq('day', today()).maybeSingle(),
     ])
-    if (!p.data) { set({ ...empty, ready: true }); return }
+    let profile = p.data
+    // 바로 시작·구글·카카오로 처음 들어오면 프로필(자동 닉네임)을 만들어요
+    if (!profile) {
+      const { data: created } = await sb.rpc('ensure_profile')
+      profile = created
+    }
+    if (!profile) { set({ ...empty, ready: true }); return }
     set({
-      user: { name: p.data.name, phone: p.data.phone, carrier: p.data.carrier ?? '', birth: p.data.birth ?? '' },
-      notificationsOn: p.data.notifications_on,
+      user: {
+        name: profile.name ?? '', phone: profile.phone ?? '', carrier: profile.carrier ?? '', birth: profile.birth ?? '',
+        nickname: profile.nickname, verified: !!profile.verified_at,
+      },
+      notificationsOn: profile.notifications_on,
       contracts: (c.data ?? []).map(toContract),
       transfers: (t.data ?? []).map(toTransfer),
       mileageLogs: (m.data ?? []).map((x) => ({ title: x.reason, amount: Number(x.amount), at: ms(x.created_at) })),
@@ -131,7 +142,16 @@ async function loadRemote() {
 
 if (sb) {
   loadRemote()
-  sb.auth.onAuthStateChange((event) => { if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') loadRemote() })
+  sb.auth.onAuthStateChange((event) => {
+    if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') loadRemote()
+    // 구글·카카오 로그인에서 돌아오면 웹앱 홈으로 이어가기
+    if (event === 'SIGNED_IN') {
+      try {
+        const next = sessionStorage.getItem('georaenote-after-login')
+        if (next) { sessionStorage.removeItem('georaenote-after-login'); location.hash = next }
+      } catch { /* 저장소를 못 써도 그대로 둬요 */ }
+    }
+  })
 }
 
 async function rpc<T>(fn: string, args: Record<string, unknown> = {}): Promise<T> {
@@ -176,7 +196,50 @@ export async function verifyLogin(p: { phone: string; code: string; expected: st
     return
   }
   if (p.code !== p.expected) throw new Error('인증번호가 일치하지 않아요')
-  set({ user: { name: p.name.trim(), phone: p.phone.replace(/\D/g, ''), carrier: p.carrier, birth: p.birth } })
+  set({ user: { name: p.name.trim(), phone: p.phone.replace(/\D/g, ''), carrier: p.carrier, birth: p.birth, nickname: state.user?.nickname ?? `사장님${p.phone.slice(-4)}`, verified: true } })
+}
+
+/** 바로 시작: 이름·번호 없이 자동 닉네임으로 가입. 계약·결제 전에 본인인증을 한 번 받아요 */
+export async function quickStart() {
+  if (REMOTE) {
+    const { error } = await sb!.auth.signInAnonymously()
+    if (error) throw new Error(errText(error))
+    await sb!.rpc('ensure_profile')
+    await loadRemote()
+    return
+  }
+  const n = ['멋진사장님', '든든한사장님', '부지런한사장님', '똑똑한사장님'][Math.floor(Math.random() * 4)] + (100 + Math.floor(Math.random() * 900))
+  set({ user: { name: '', phone: '', carrier: '', birth: '', nickname: n, verified: false } })
+}
+
+/** 구글·카카오 로그인. 로그인 후 이 사이트로 돌아오면 자동으로 이어져요 */
+export async function socialLogin(provider: 'google' | 'kakao') {
+  if (!REMOTE) throw new Error('서버가 연결되어야 쓸 수 있어요')
+  try { sessionStorage.setItem('georaenote-after-login', '/app') } catch { /* 저장 못 해도 홈으로 가요 */ }
+  const redirectTo = `${location.origin}${location.pathname}`
+  const { error } = await sb!.auth.signInWithOAuth({ provider, options: { redirectTo } })
+  if (error) throw new Error(errText(error))
+}
+
+/** 이미 로그인한 계정에 휴대폰 본인인증을 붙여요(계약·결제 전에 1회) */
+export async function verifyLink(p: { phone: string; code: string; expected: string; name: string; birth: string; carrier: string }) {
+  if (REMOTE) {
+    const { data: { session } } = await sb!.auth.getSession()
+    if (!session) throw new Error('다시 로그인해 주세요')
+    await callFunction('auth-phone', { action: 'verify', link: true, ...p }, session.access_token)
+    await sb!.auth.refreshSession()
+    await loadRemote()
+    return
+  }
+  if (p.code !== p.expected) throw new Error('인증번호가 일치하지 않아요')
+  if (!state.user) throw new Error('다시 로그인해 주세요')
+  set({ user: { ...state.user, name: p.name.trim(), phone: p.phone.replace(/\D/g, ''), carrier: p.carrier, birth: p.birth, verified: true } })
+}
+
+export async function updateNickname(nickname: string) {
+  if (REMOTE) { await rpc('update_nickname', { p_nickname: nickname }); await loadRemote(); return }
+  if (!/^[가-힣A-Za-z0-9]{2,12}$/.test(nickname.trim())) throw new Error('닉네임은 한글·영문·숫자 2~12자로 정해 주세요')
+  if (state.user) set({ user: { ...state.user, nickname: nickname.trim() } })
 }
 
 export async function logout() {

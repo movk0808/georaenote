@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { BadgeCheck, ChevronDown, FileText, Paperclip, X } from 'lucide-react'
 import { AppPage } from '../../components/Layouts'
 import { Confirm, Kv, ListPicker, StatusPill, TypeBadge } from '../../components/ui'
@@ -15,10 +15,17 @@ function StepBar({ step }: { step: number }) {
 }
 
 /** 계약 등록: 유형 → 거래처·계좌(·주소) → 송금자명 → 증빙 → 완료 */
+/** 본인인증 전이면 인증 화면으로 먼저 보내요 */
 export function ContractNew() {
   const { user } = useStore()
+  if (user && !user.verified) return <Navigate to="/app/verify?next=/app/contracts/new" replace />
+  return <ContractNewForm />
+}
+
+function ContractNewForm() {
+  const { user } = useStore()
   const [step, setStep] = useState(0)
-  const [d, setD] = useState(() => ({ ...emptyDraft(), senderName: user?.name ?? '' }))
+  const [d, setD] = useState(() => ({ ...emptyDraft(), senderName: user?.name || user?.nickname || '' }))
   const [verified, setVerified] = useState(false)
   const [bankOpen, setBankOpen] = useState(false)
   const [done, setDone] = useState(false)

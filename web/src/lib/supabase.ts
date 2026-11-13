@@ -9,17 +9,20 @@ const url = import.meta.env.VITE_SUPABASE_URL as string | undefined
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
 
 export const sb: SupabaseClient | null = url && key
-  ? createClient(url, key, { auth: { persistSession: true, autoRefreshToken: true, storageKey: 'georaenote-auth' } })
+  ? createClient(url, key, { auth: { persistSession: true, autoRefreshToken: true, storageKey: 'georaenote-auth', flowType: 'pkce', detectSessionInUrl: true } })
   : null
 
 export const REMOTE = !!sb
 
+/** 켜 둔 소셜 로그인(예: "google,kakao"). 각 개발자 센터 키를 Supabase에 등록한 뒤 VITE_AUTH_PROVIDERS 에 적어요 */
+export const SOCIAL = ((import.meta.env.VITE_AUTH_PROVIDERS as string | undefined) ?? '').split(',').map((x) => x.trim()).filter((x): x is 'google' | 'kakao' => x === 'google' || x === 'kakao')
+
 /** 서버 함수(Edge Function) 호출 */
-export async function callFunction<T>(name: string, body: unknown): Promise<T> {
+export async function callFunction<T>(name: string, body: unknown, userToken?: string): Promise<T> {
   if (!url || !key) throw new Error('서버가 연결되지 않았어요')
   const res = await fetch(`${url}/functions/v1/${name}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', apikey: key, Authorization: `Bearer ${key}` },
+    headers: { 'Content-Type': 'application/json', apikey: key, Authorization: `Bearer ${userToken ?? key}` },
     body: JSON.stringify(body),
   })
   const data = await res.json().catch(() => ({}))

@@ -5,8 +5,10 @@ object Routes {
     const val HOME = "home"
     const val GUIDE = "guide"
     const val TERMS = "terms"
-    const val CARRIER = "carrier"
-    const val VERIFY = "verify/{carrier}"
+    const val START = "start"
+    /** mode: login(휴대폰 번호로 로그인) / link(지금 계정에 본인인증 붙이기) */
+    const val CARRIER = "carrier/{mode}"
+    const val VERIFY = "verify/{mode}/{carrier}"
     const val DOC = "doc/{kind}"
 
     const val CONTRACT_TYPE = "contract_new/type"
@@ -32,7 +34,8 @@ object Routes {
     const val SETTINGS = "settings"
     const val MILEAGE = "mileage"
 
-    fun verify(carrier: String) = "verify/$carrier"
+    fun carrier(mode: String) = "carrier/$mode"
+    fun verify(mode: String, carrier: String) = "verify/$mode/$carrier"
     fun doc(kind: String) = "doc/$kind"
     fun contract(id: String) = "contract/$id"
     fun transfer(contractId: String) = "transfer/$contractId"

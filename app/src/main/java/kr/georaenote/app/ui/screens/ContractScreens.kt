@@ -184,7 +184,7 @@ fun ContractSenderScreen(vm: AppViewModel, back: () -> Unit, go: (String) -> Uni
     androidx.compose.runtime.LaunchedEffect(Unit) {
         val u = vm.user
         if (vm.contractDraft.senderName.isEmpty() && u != null) {
-            vm.contractDraft = vm.contractDraft.copy(senderName = u.name)
+            vm.contractDraft = vm.contractDraft.copy(senderName = u.name.ifBlank { u.nickname }.take(10))
         }
     }
     Screen("계약등록", back, bottom = {

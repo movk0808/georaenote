@@ -48,7 +48,7 @@ export function ContractsPage({ staff }: { staff: Staff }) {
   const [q, setQ] = useState('')
   const [open, setOpen] = useState<Row | null>(null)
   const list = useQuery(async () => {
-    let query = adb!.from('contracts').select('*, profiles(name, phone, business_name), contract_documents(id, file_name, storage_path)').order('created_at', { ascending: status === 'REVIEW' }).limit(300)
+    let query = adb!.from('contracts').select('*, profiles(name, nickname, phone, business_name), contract_documents(id, file_name, storage_path)').order('created_at', { ascending: status === 'REVIEW' }).limit(300)
     if (status !== 'ALL') query = query.eq('status', status)
     const { data, error } = await query
     if (error) throw error
@@ -69,7 +69,7 @@ export function ContractsPage({ staff }: { staff: Staff }) {
             {rows.map((r) => (
               <tr key={r.id} onClick={() => setOpen(r)} tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && setOpen(r)}>
                 <td className="num muted">{dt(r.created_at)}</td>
-                <td>{r.profiles?.business_name ?? '-'}<small>{r.profiles?.name}</small></td>
+                <td>{r.profiles?.business_name ?? r.profiles?.nickname ?? '-'}<small>{r.profiles?.name ?? '본인인증 전'}</small></td>
                 <td>{r.title}<small>{TYPE_LABEL[r.type]}</small></td>
                 <td>{r.bank}<small className="num">{r.account} · {r.holder}</small></td>
                 <td className="num">{r.contract_documents?.length ?? 0}개</td>
@@ -153,7 +153,7 @@ export function TransfersPage({ staff }: { staff: Staff }) {
   const [q, setQ] = useState('')
   const [open, setOpen] = useState<Row | null>(null)
   const list = useQuery(async () => {
-    let query = adb!.from('transfers').select('*, profiles(name, business_name), card_charges(*)').order('created_at', { ascending: false }).limit(300)
+    let query = adb!.from('transfers').select('*, profiles(name, nickname, business_name), card_charges(*)').order('created_at', { ascending: false }).limit(300)
     if (status !== 'ALL') query = query.eq('status', status)
     const { data, error } = await query
     if (error) throw error
@@ -175,7 +175,7 @@ export function TransfersPage({ staff }: { staff: Staff }) {
             {rows.map((r) => (
               <tr key={r.id} onClick={() => setOpen(r)} tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && setOpen(r)}>
                 <td className="num muted">{dt(r.paid_at)}</td>
-                <td>{r.profiles?.business_name ?? '-'}<small>{r.profiles?.name}</small></td>
+                <td>{r.profiles?.business_name ?? r.profiles?.nickname ?? '-'}<small>{r.profiles?.name ?? '본인인증 전'}</small></td>
                 <td>{r.payee_name}<small>{r.bank} {r.masked_account}</small></td>
                 <td>{r.method === 'INSTANT' ? '바로' : `예약 ${r.scheduled_date?.slice(5) ?? ''}`}</td>
                 <td className="r num">{won(r.amount)}</td>
@@ -265,8 +265,8 @@ export function UsersPage({ staff }: { staff: Staff }) {
             {rows.map((p) => (
               <tr key={p.id} style={{ cursor: 'default' }}>
                 <td className="num muted">{dt(p.created_at).slice(0, 10)}</td>
-                <td>{p.business_name ?? '-'}<small>{p.name}{p.is_demo ? ' · 데모' : ''}</small></td>
-                <td className="num">{p.phone}</td>
+                <td>{p.business_name ?? p.nickname}<small>{p.name ?? '본인인증 전'}{p.is_demo ? ' · 데모' : ''}{p.auth_provider ? ` · ${p.auth_provider}` : ''}</small></td>
+                <td className="num">{p.phone ?? '-'}</td>
                 <td className="r num">{p.contracts?.length ?? 0}</td>
                 <td className="r num">{p.cnt}</td>
                 <td className="r num">{won(p.gmv)}</td>

@@ -39,6 +39,7 @@ import kr.georaenote.app.ui.screens.NoticeDetailScreen
 import kr.georaenote.app.ui.screens.OnboardingScreen
 import kr.georaenote.app.ui.screens.PayScreen
 import kr.georaenote.app.ui.screens.SettingsScreen
+import kr.georaenote.app.ui.screens.StartScreen
 import kr.georaenote.app.ui.screens.SupportScreen
 import kr.georaenote.app.ui.screens.TermsScreen
 import kr.georaenote.app.ui.screens.TransferResultScreen
@@ -85,13 +86,21 @@ fun AppNav(vm: AppViewModel) {
         // 가입·본인인증
         composable(Routes.TERMS) { TermsScreen(back, go) }
         composable(Routes.DOC) { e -> DocScreen(e.arguments?.getString("kind") ?: "service", back) }
-        composable(Routes.CARRIER) { CarrierScreen(back, go) }
+        composable(Routes.START) { StartScreen(vm, back, go) { nav.goHome() } }
+        composable(Routes.CARRIER) { e -> CarrierScreen(e.arguments?.getString("mode") ?: "login", back, go) }
         composable(Routes.VERIFY) { e ->
-            VerifyScreen(vm, e.arguments?.getString("carrier") ?: "", back) { nav.goHome() }
+            val mode = e.arguments?.getString("mode") ?: "login"
+            VerifyScreen(vm, mode, e.arguments?.getString("carrier") ?: "", back) {
+                val target = vm.afterVerify
+                vm.afterVerify = null
+                if (mode == "link" && target != null) nav.navigate(target) { popUpTo(Routes.HOME) } else nav.goHome()
+            }
         }
 
         // 계약 등록
-        composable(Routes.CONTRACT_TYPE) { ContractTypeScreen(vm, back, go) }
+        composable(Routes.CONTRACT_TYPE) {
+            if (vm.needsVerify) VerifyFirst(vm, nav, Routes.CONTRACT_TYPE) else ContractTypeScreen(vm, back, go)
+        }
         composable(Routes.CONTRACT_PAYEE) { ContractPayeeScreen(vm, back, go) }
         composable(Routes.CONTRACT_SENDER) { ContractSenderScreen(vm, back, go) }
         composable(Routes.CONTRACT_PROOF) { ContractProofScreen(vm, back) { nav.navigate(it) { popUpTo(Routes.HOME) } } }
@@ -99,7 +108,10 @@ fun AppNav(vm: AppViewModel) {
         composable(Routes.CONTRACT) { e -> ContractDetailScreen(vm, e.arguments?.getString("id") ?: "", back, go) }
 
         // 송금
-        composable(Routes.TRANSFER) { e -> TransferScreen(vm, e.arguments?.getString("contractId") ?: "", back, go) }
+        composable(Routes.TRANSFER) { e ->
+            val id = e.arguments?.getString("contractId") ?: ""
+            if (vm.needsVerify) VerifyFirst(vm, nav, Routes.transfer(id)) else TransferScreen(vm, id, back, go)
+        }
         composable(Routes.PAY) {
             PayScreen(vm, back) { id -> nav.navigate(Routes.transferDone(id)) { popUpTo(Routes.HOME) } }
         }
@@ -121,5 +133,14 @@ fun AppNav(vm: AppViewModel) {
         composable(Routes.SUPPORT) { SupportScreen(back, go) { vm.sendInquiry(it) } }
         composable(Routes.SETTINGS) { SettingsScreen(vm, back, go) { nav.goHome() } }
         composable(Routes.MILEAGE) { MileageScreen(vm, back, go) }
+    }
+}
+
+/** 본인인증 전이면 인증 화면으로 먼저 보내고, 끝나면 원래 가려던 화면(target)으로 돌아와요 */
+@Composable
+private fun VerifyFirst(vm: AppViewModel, nav: NavHostController, target: String) {
+    androidx.compose.runtime.LaunchedEffect(target) {
+        vm.afterVerify = target
+        nav.navigate(Routes.carrier("link")) { popUpTo(Routes.HOME) }
     }
 }

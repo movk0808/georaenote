@@ -21,6 +21,7 @@ export function TransferPage() {
   const [split, setSplit] = useState(false)
   const [method, setMethod] = useState<Method>('SCHEDULED')
   const [day, setDay] = useState(addDays(today(), 1))
+  if (s.user && !s.user.verified) return <Navigate to={`/app/verify?next=/app/transfer/${contractId}`} replace />
   if (!c) return <AppPage title="송금하기" back="/app"><p className="empty">계약을 찾을 수 없어요</p></AppPage>
   if (c.status !== 'APPROVED') return <Navigate to={`/app/contracts/${c.id}`} replace />
 

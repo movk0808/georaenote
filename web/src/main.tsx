@@ -7,7 +7,7 @@ import { ToastHost } from './components/ui'
 import Landing from './pages/site/Landing'
 import { DownloadPage, FeesPage, GuidePage, InstallmentPage, TermsPage } from './pages/site/InfoPages'
 import { ArticlePage, EventPage, MagazinePage, NoticePage, SupportPage } from './pages/site/BoardPages'
-import LoginPage from './pages/app/Login'
+import LoginPage, { VerifyPage } from './pages/app/Login'
 import AppHome from './pages/app/AppHome'
 import { ContractDetail, ContractNew } from './pages/app/Contracts'
 import { HistoryPage, PayPage, TransferPage, TransferResult } from './pages/app/Transfers'
@@ -39,6 +39,7 @@ createRoot(document.getElementById('root')!).render(
         <Route path="admin/*" element={<Suspense fallback={null}><AdminApp /></Suspense>} />
         <Route path="app" element={<AppLayout />}>
           <Route index element={<AppHome />} />
+          <Route path="verify" element={<VerifyPage />} />
           <Route path="contracts/new" element={<ContractNew />} />
           <Route path="contracts/:id" element={<ContractDetail />} />
           <Route path="transfer/:contractId" element={<TransferPage />} />

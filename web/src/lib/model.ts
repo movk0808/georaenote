@@ -76,7 +76,17 @@ export interface Transfer {
   status: TransferStatus
 }
 
-export interface User { name: string; phone: string; carrier: string; birth: string }
+export interface User {
+  /** 본인인증 전에는 비어 있어요 */
+  name: string
+  phone: string
+  carrier: string
+  birth: string
+  /** 자동으로 정해지는 닉네임(멋진사장님12 같은), 바꿀 수 있어요 */
+  nickname: string
+  /** 휴대폰 본인인증을 마쳤는지: 계약 등록·결제에 필요 */
+  verified: boolean
+}
 export interface MileageLog { title: string; amount: number; at: number }
 
 export const maskAccount = (acc: string) => (acc.length <= 4 ? acc : '*'.repeat(Math.min(acc.length - 4, 6)) + acc.slice(-4))

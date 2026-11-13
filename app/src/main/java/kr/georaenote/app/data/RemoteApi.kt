@@ -113,6 +113,22 @@ class RemoteApi private constructor(private val context: Context, private val ba
         saveSession(res.getString("access_token"), res.getString("refresh_token"), res.optLong("expires_at", now() + 3600), res.getString("user_id"))
     }
 
+    /** 바로 시작: 이름·번호 없이 가입(익명 계정 + 자동 닉네임). 계약·결제 전에 본인인증을 붙여요 */
+    fun quickStart() {
+        val res = JSONObject(http("POST", "/auth/v1/signup", JSONObject().put("data", JSONObject()), auth = false))
+        saveSession(res.getString("access_token"), res.getString("refresh_token"), res.optLong("expires_at", now() + res.optLong("expires_in", 3600)), res.getJSONObject("user").getString("id"))
+        rpc("ensure_profile")
+    }
+
+    /** 지금 로그인한 계정에 휴대폰 본인인증을 붙여요 */
+    fun verifyLink(phone: String, code: String, name: String, birth: String, carrier: String) {
+        http("POST", "/functions/v1/auth-phone", JSONObject().put("action", "verify").put("link", true).put("phone", phone).put("code", code)
+            .put("name", name).put("birth", birth).put("carrier", carrier))
+        refreshSession()
+    }
+
+    fun updateNickname(nickname: String) { rpc("update_nickname", JSONObject().put("p_nickname", nickname)) }
+
     fun logout() {
         runCatching { http("POST", "/auth/v1/logout") }
         clearSession()
@@ -131,14 +147,15 @@ class RemoteApi private constructor(private val context: Context, private val ba
     fun load(): Snapshot {
         val uid = userId ?: throw ApiException("로그인이 필요해요")
         runCatching { rpc("tick") }
-        val p = get("profiles?select=*&id=eq.$uid").optJSONObject(0)
+        var p = get("profiles?select=*&id=eq.$uid").optJSONObject(0)
+        if (p == null) { rpc("ensure_profile"); p = get("profiles?select=*&id=eq.$uid").optJSONObject(0) }
         val contracts = get("contracts?select=*,contract_documents(file_name)&user_id=eq.$uid&status=neq.SUSPENDED&order=created_at.desc").objects().map(::toContract)
         val transfers = get("transfers?select=*,card_charges(company,installment,amount)&user_id=eq.$uid&order=created_at.desc&limit=200").objects().map(::toTransfer)
         val mileage = get("mileage_ledger?select=amount,reason,created_at&user_id=eq.$uid&order=created_at.desc&limit=200").objects()
             .map { MileageLog(it.getString("reason"), it.getLong("amount"), ms(it.getString("created_at"))) }
         val quiz = get("quiz_answers?select=day&user_id=eq.$uid&day=eq.${Format.today()}").length() > 0
         return Snapshot(
-            user = p?.let { User(it.getString("name"), it.getString("phone"), it.optString("carrier"), it.optString("birth")) },
+            user = p?.let { User(it.str("name") ?: "", it.str("phone") ?: "", it.str("carrier") ?: "", it.str("birth") ?: "", it.optString("nickname"), !it.isNull("verified_at")) },
             notificationsOn = p?.optBoolean("notifications_on", true) ?: true,
             contracts = contracts, transfers = transfers, mileage = mileage, quizDoneToday = quiz,
         )

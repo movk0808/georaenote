@@ -53,7 +53,7 @@ export function SiteLayout() {
           </nav>
           <div className="site-actions">
             {user
-              ? <Link className="btn btn-ghost btn-sm hide-m" to="/app/settings">{user.name}님</Link>
+              ? <Link className="btn btn-ghost btn-sm hide-m" to="/app/settings">{user.nickname}님</Link>
               : <Link className="btn btn-ghost btn-sm hide-m" to="/login">로그인</Link>}
             <Link className="btn btn-primary btn-sm" to="/app">결제 시작하기</Link>
             <button className="menu-btn" aria-label="메뉴" aria-expanded={open} onClick={() => setOpen(!open)}>
@@ -152,7 +152,7 @@ export function AppLayout() {
         </nav>
         <div className="side-foot">
           <Link to="/" className="link">사이트로 돌아가기</Link>
-          <span>{user.name} 사장님</span>
+          <span>{user.nickname}님{user.verified ? '' : ' · 본인인증 전'}</span>
         </div>
       </aside>
       <div className="app-main">

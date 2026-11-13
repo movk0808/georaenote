@@ -34,7 +34,7 @@ class Repository(context: Context) {
     fun loadUser(): User? {
         val raw = prefs.getString("user", null) ?: return null
         val o = JSONObject(raw)
-        return User(o.getString("name"), o.getString("phone"), o.getString("carrier"), o.optString("birth"))
+        return User(o.optString("name"), o.optString("phone"), o.optString("carrier"), o.optString("birth"), o.optString("nickname"), o.optBoolean("verified", true))
     }
 
     fun saveUser(user: User?) {
@@ -42,7 +42,7 @@ class Repository(context: Context) {
             prefs.edit().remove("user").apply(); return
         }
         val o = JSONObject().put("name", user.name).put("phone", user.phone)
-            .put("carrier", user.carrier).put("birth", user.birth)
+            .put("carrier", user.carrier).put("birth", user.birth).put("nickname", user.nickname).put("verified", user.verified)
         prefs.edit().putString("user", o.toString()).apply()
     }
 

@@ -93,6 +93,12 @@ fun HomeScreen(vm: AppViewModel, go: (String) -> Unit, openWeb: () -> Unit) {
         ) {
             HomeHeader(vm, go)
             if (vm.loggedIn) {
+                if (vm.needsVerify) {
+                    Card(onClick = { vm.afterVerify = Routes.HOME; go(Routes.carrier("link")) }) {
+                        Text("본인인증 한 번이면 계약 등록과 결제를 할 수 있어요", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Brand.Primary)
+                        Text("인증한 번호로 웹에서도 같은 계정으로 로그인돼요", fontSize = 12.sp, color = Brand.SubInk)
+                    }
+                }
                 ContractsCard(vm, go)
                 SummaryRow(vm, go)
             } else {
@@ -155,7 +161,7 @@ private fun HomeHeader(vm: AppViewModel, go: (String) -> Unit) {
         val user = vm.user
         if (user != null) {
             Column(Modifier.weight(1f)) {
-                Text("${user.name} 사장님", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Brand.Ink)
+                Text("${user.displayName}님", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Brand.Ink)
                 Text("오늘도 든든한 하루 되세요", fontSize = 12.sp, color = Brand.Faint)
             }
         } else {

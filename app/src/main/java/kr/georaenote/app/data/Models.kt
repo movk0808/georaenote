@@ -92,11 +92,18 @@ data class Transfer(
 }
 
 data class User(
+    /** 본인인증 전에는 비어 있어요 */
     val name: String,
     val phone: String,
     val carrier: String,
     val birth: String,
-)
+    /** 자동 닉네임(멋진사장님12 같은), 바꿀 수 있어요 */
+    val nickname: String = "",
+    /** 휴대폰 본인인증 여부: 계약 등록·결제에 필요 */
+    val verified: Boolean = true,
+) {
+    val displayName: String get() = nickname.ifBlank { name.ifBlank { "사장님" } }
+}
 
 data class MileageLog(val title: String, val amount: Long, val at: Long)
 
