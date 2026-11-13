@@ -178,7 +178,18 @@ class RemoteApi private constructor(private val context: Context, private val ba
     fun send(id: String) { rpc("send_transfer", JSONObject().put("p_id", id)) }
     fun cancel(id: String) { rpc("cancel_transfer", JSONObject().put("p_id", id)) }
     fun setNotifications(on: Boolean) { rpc("update_my_profile", JSONObject().put("p_notifications", on)) }
-    fun withdraw() { rpc("withdraw_me"); clearSession() }
+    fun withdraw() {
+        // 올린 증빙 파일 먼저 지우기(계정 삭제 후에는 본인이 지울 수 없어요)
+        val uid = userId
+        if (uid != null) runCatching {
+            val list = JSONArray(http("POST", "/storage/v1/object/list/proofs", JSONObject().put("prefix", "$uid/").put("limit", 1000)))
+            for (i in 0 until list.length()) {
+                runCatching { http("DELETE", "/storage/v1/object/proofs/$uid/" + list.getJSONObject(i).getString("name")) }
+            }
+        }
+        rpc("withdraw_me")
+        clearSession()
+    }
     fun inquiry(message: String) { rpc("create_inquiry", JSONObject().put("p_message", message)) }
 
     /** 정답은 서버가 판정해요. (정답 여부, 정답 번호, 해설) */

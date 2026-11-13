@@ -185,7 +185,15 @@ export async function logout() {
 }
 
 export async function withdraw() {
-  if (REMOTE) { await rpc('withdraw_me'); await sb!.auth.signOut(); set({ ...empty, ready: true }); return }
+  if (REMOTE) {
+    // 올린 증빙 파일 먼저 지우기(계정 삭제 후에는 본인이 지울 수 없어요)
+    const { data: { session } } = await sb!.auth.getSession()
+    if (session) {
+      const { data: files } = await sb!.storage.from('proofs').list(session.user.id, { limit: 1000 })
+      if (files?.length) await sb!.storage.from('proofs').remove(files.map((f) => `${session.user.id}/${f.name}`))
+    }
+    await rpc('withdraw_me'); await sb!.auth.signOut(); set({ ...empty, ready: true }); return
+  }
   set({ ...empty, ready: true })
 }
 
