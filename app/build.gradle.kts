@@ -15,8 +15,8 @@ android {
         applicationId = "kr.georaenote.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "0.2.0"
+        versionCode = 4
+        versionName = "0.2.1"
 
         // 서버(Supabase) 연결: local.properties 나 환경 변수의 값을 넣어요. 비어 있으면 기기 안에만 저장하는 체험 모드
         val local = Properties().apply {
