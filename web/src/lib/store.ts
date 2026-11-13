@@ -103,8 +103,13 @@ const toTransfer = (r: Row): Transfer => ({
 })
 
 let loading = false
-async function loadRemote() {
-  if (!sb || loading) return
+let loadAgain = false
+/** 소셜 로그인에서 실패해 돌아왔을 때 로그인 화면에 보여줄 문장 */
+export let oauthError = ''
+async function loadRemote(): Promise<void> {
+  if (!sb) return
+  // 읽는 중에 또 불리면(로그인 직후 등) 끝난 뒤 한 번 더 읽어요. 건너뛰면 방금 로그인한 세션을 놓쳐요
+  if (loading) { loadAgain = true; return }
   loading = true
   try {
     const { data: { session } } = await sb.auth.getSession()
@@ -137,23 +142,40 @@ async function loadRemote() {
     })
   } finally {
     loading = false
+    if (loadAgain) { loadAgain = false; void loadRemote() }
   }
 }
 
 if (sb) {
-  // 네이버 로그인에서 받은 세션을 넣으면 SIGNED_IN 이벤트로 화면이 갱신돼요
-  if (naverReturn.at && naverReturn.rt) sb.auth.setSession({ access_token: naverReturn.at, refresh_token: naverReturn.rt })
-  loadRemote()
+  // 소셜 로그인에서 막 돌아온 경우에만 로그인 뒤 홈으로 보내요.
+  // (Supabase 는 탭이 다시 보일 때도 SIGNED_IN 을 보내서, 그때마다 옮기면 작성 중인 화면이 사라져요)
+  const oauthReturn = !!naverReturn.at || /[?&]code=/.test(location.search)
+  let afterLogin: string | null = null
+  try {
+    afterLogin = sessionStorage.getItem('georaenote-after-login')
+    sessionStorage.removeItem('georaenote-after-login')
+  } catch { /* 저장소를 못 써도 그대로 둬요 */ }
+  if (!oauthReturn) afterLogin = null
+
+  // 구글·카카오 로그인 실패로 돌아오면(?error=...) 로그인 화면에 이유를 보여줘요
+  const q = new URLSearchParams(location.search)
+  if (q.get('error')) {
+    oauthError = q.get('error_description') || '로그인하지 못했어요'
+    history.replaceState(null, '', `${location.pathname}#/login`)
+  }
+
   sb.auth.onAuthStateChange((event) => {
-    if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') loadRemote()
-    // 구글·카카오 로그인에서 돌아오면 웹앱 홈으로 이어가기
-    if (event === 'SIGNED_IN') {
-      try {
-        const next = sessionStorage.getItem('georaenote-after-login')
-        if (next) { sessionStorage.removeItem('georaenote-after-login'); location.hash = next }
-      } catch { /* 저장소를 못 써도 그대로 둬요 */ }
-    }
+    if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') loadRemote()
+    if (event === 'SIGNED_IN' && afterLogin) { const next = afterLogin; afterLogin = null; location.hash = next }
   })
+  // 네이버 로그인에서 받은 세션은 저장을 마친 뒤 읽어요
+  if (naverReturn.at && naverReturn.rt) {
+    sb.auth.setSession({ access_token: naverReturn.at, refresh_token: naverReturn.rt })
+      .then(({ error }) => { if (error) oauthError = '네이버 로그인 정보를 저장하지 못했어요. 다시 시도해 주세요' })
+      .finally(() => loadRemote())
+  } else {
+    loadRemote()
+  }
 }
 
 async function rpc<T>(fn: string, args: Record<string, unknown> = {}): Promise<T> {

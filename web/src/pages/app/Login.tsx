@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { Check, ChevronLeft, ChevronRight, ShieldCheck, Smartphone, Zap } from 'lucide-react'
-import { MODE, quickStart, requestCode, SOCIAL, socialLogin, useStore, verifyLink, verifyLogin } from '../../lib/store'
+import { MODE, oauthError, quickStart, requestCode, SOCIAL, socialLogin, useStore, verifyLink, verifyLogin } from '../../lib/store'
 import { naverReturn } from '../../lib/supabase'
 import { phone as fmtPhone } from '../../lib/format'
 import { SITE } from '../../data/content'
@@ -103,10 +103,10 @@ export default function LoginPage() {
   const navigate = useNavigate()
   const from = (useLocation().state as { from?: string } | null)?.from ?? '/app'
   // 네이버 로그인에 실패하고 돌아왔으면 방법 고르기 화면에서 이유를 보여줘요
-  const [step, setStep] = useState<'terms' | 'method' | 'phone'>(naverReturn.error ? 'method' : 'terms')
+  const [step, setStep] = useState<'terms' | 'method' | 'phone'>(naverReturn.error || oauthError ? 'method' : 'terms')
   const [agree, setAgree] = useState({ service: false, privacy: false, marketing: false })
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState(naverReturn.error ?? '')
+  const [error, setError] = useState(naverReturn.error || oauthError || '')
 
   if (user && step !== 'phone') return <Navigate to={from} replace />
   const all = agree.service && agree.privacy && agree.marketing
