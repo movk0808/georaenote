@@ -14,6 +14,8 @@ import { HistoryPage, PayPage, TransferPage, TransferResult } from './pages/app/
 import { ChatPage, MileagePage, SettingsPage } from './pages/app/Account'
 
 const AdminApp = lazy(() => import('./admin/AdminApp'))
+// 엑셀 라이브러리가 커서 이 화면을 열 때만 불러와요
+const BulkTransferPage = lazy(() => import('./pages/app/Bulk').then((m) => ({ default: m.BulkTransferPage })))
 
 // GitHub Pages에서 새로고침해도 깨지지 않도록 해시 주소(#/...)를 씁니다.
 createRoot(document.getElementById('root')!).render(
@@ -45,6 +47,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="transfer/:contractId" element={<TransferPage />} />
           <Route path="pay" element={<PayPage />} />
           <Route path="transfers" element={<HistoryPage />} />
+          <Route path="transfers/bulk" element={<Suspense fallback={null}><BulkTransferPage /></Suspense>} />
           <Route path="transfers/:id" element={<TransferResult />} />
           <Route path="mileage" element={<MileagePage />} />
           <Route path="chat" element={<ChatPage />} />

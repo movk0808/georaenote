@@ -169,7 +169,7 @@ export function TransfersPage({ staff }: { staff: Staff }) {
       <Head title="결제·송금" sub={`표시된 ${rows.length}건 · 송금액 합계 ${won(sum)}`}>
         <SearchBox value={q} onChange={setQ} placeholder="거래처, 상호, 메모" />
       </Head>
-      <Filters value={status} onChange={(v) => setParams({ status: v })} options={[['ALL', '전체'], ['WAITING_SEND', '송금 대기'], ['SCHEDULED', '예약됨'], ['COMPLETED', '완료'], ['FAILED', '실패'], ['CANCELED', '취소']]} />
+      <Filters value={status} onChange={(v) => setParams({ status: v })} options={[['ALL', '전체'], ['WAITING_SEND', '송금 대기'], ['SENDING', '송금 중'], ['SCHEDULED', '예약됨'], ['COMPLETED', '완료'], ['FAILED', '실패'], ['CANCELED', '취소']]} />
       <div className="adm-card adm-table-wrap">
         <table className="adm-table">
           <thead><tr><th>결제 일시</th><th>사장님</th><th>받는 곳</th><th>방식</th><th className="r">송금액</th><th className="r">이용료</th><th>상태</th></tr></thead>

@@ -1,11 +1,12 @@
 import { FormEvent, useEffect, useState } from 'react'
 import { NavLink, Route, Routes } from 'react-router-dom'
 import {
-  BadgeCheck, Banknote, FileCheck2, LayoutDashboard, LogOut, Megaphone, MessageSquareText, Settings2, Star, Users,
+  BadgeCheck, Banknote, Send, FileCheck2, LayoutDashboard, LogOut, Megaphone, MessageSquareText, Settings2, Star, Users,
 } from 'lucide-react'
 import { adb, arpc, useStaff } from './api'
 import Dashboard from './Dashboard'
 import { ContractsPage, TransfersPage, UsersPage } from './Operations'
+import { PayoutsPage } from './Payouts'
 import { InquiriesPage, NoticesPage, ReviewsPage, SettingsPage } from './Support'
 import '../admin.css'
 
@@ -13,6 +14,7 @@ const NAV = [
   { to: '/admin', label: '대시보드', icon: LayoutDashboard, end: true },
   { to: '/admin/contracts', label: '계약 심사', icon: FileCheck2 },
   { to: '/admin/transfers', label: '결제·송금', icon: Banknote },
+  { to: '/admin/payouts', label: '송금 처리', icon: Send },
   { to: '/admin/users', label: '회원', icon: Users },
   { to: '/admin/inquiries', label: '1:1 문의', icon: MessageSquareText },
   { to: '/admin/reviews', label: '후기', icon: Star },
@@ -48,6 +50,7 @@ export default function AdminApp() {
           <Route index element={<Dashboard />} />
           <Route path="contracts" element={<ContractsPage staff={staff} />} />
           <Route path="transfers" element={<TransfersPage staff={staff} />} />
+          <Route path="payouts" element={<PayoutsPage staff={staff} />} />
           <Route path="users" element={<UsersPage staff={staff} />} />
           <Route path="inquiries" element={<InquiriesPage />} />
           <Route path="reviews" element={<ReviewsPage />} />

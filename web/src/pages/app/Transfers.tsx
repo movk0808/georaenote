@@ -176,6 +176,7 @@ function StatusHead({ t }: { t: Transfer }) {
   const map = {
     WAITING_SEND: { cls: 'wait', icon: <CircleCheck size={30} />, title: '카드 결제가 완료됐어요', sub: "아래 '송금하기'를 누르면 바로 입금돼요" },
     SCHEDULED: { cls: 'wait', icon: <Clock size={30} />, title: '예약 완료', sub: `${t.scheduledDate}에 거래처 계좌로 입금돼요` },
+    SENDING: { cls: 'wait', icon: <Clock size={30} />, title: '송금 중이에요', sub: `${t.payeeName} 계좌로 보내고 있어요` },
     COMPLETED: { cls: '', icon: <CircleCheck size={30} />, title: '송금 완료', sub: `${t.payeeName}에 ${won(t.amount)}을 보냈어요` },
     CANCELED: { cls: 'cancel', icon: <X size={30} />, title: '취소된 송금이에요', sub: '카드 결제가 취소되었어요' },
     FAILED: { cls: 'cancel', icon: <X size={30} />, title: '송금에 실패했어요', sub: '고객센터에서 확인 후 다시 처리해 드릴게요' },
@@ -222,7 +223,9 @@ export function TransferResult() {
         <Kv k="결제 일시" v={dateTime(t.createdAt)} />
         <Kv k={t.status === 'COMPLETED' ? '적립 마일리지' : '적립 예정'} v={<span className="paid">{mileage(t.mileage)}</span>} />
       </dl>
-      {t.status === 'WAITING_SEND' && <p className="hint" style={{ textAlign: 'center', marginTop: 12 }}>바로송금은 결제 후 반드시 '송금하기'를 눌러야 송금이 완료돼요</p>}
+      {t.reviewPending && <p className="hint" style={{ textAlign: 'center', marginTop: 12 }}>고액 송금이라 거래노트가 확인한 뒤 보내져요. 보통 영업일 1일 안에 처리돼요</p>}
+      {t.status === 'SENDING' && <p className="hint" style={{ textAlign: 'center', marginTop: 12 }}>송금이 접수됐어요. 거래노트가 거래처 계좌로 보내는 중이에요</p>}
+      {t.status === 'WAITING_SEND' && !t.reviewPending && <p className="hint" style={{ textAlign: 'center', marginTop: 12 }}>바로송금은 결제 후 반드시 '송금하기'를 눌러야 송금이 완료돼요</p>}
       <div className="form-foot">
         {t.status === 'WAITING_SEND' && <>
           <button className="btn btn-secondary" disabled={sending} onClick={() => setConfirm(true)}>결제 취소</button>
@@ -232,7 +235,7 @@ export function TransferResult() {
           <button className="btn btn-secondary" onClick={() => setConfirm(true)}>예약 취소</button>
           <button className="btn btn-primary" onClick={() => navigate('/app')}>확인</button>
         </>}
-        {(t.status === 'COMPLETED' || t.status === 'CANCELED') && <button className="btn btn-primary" onClick={() => navigate('/app')}>확인</button>}
+        {(t.status === 'COMPLETED' || t.status === 'CANCELED' || t.status === 'SENDING' || t.status === 'FAILED') && <button className="btn btn-primary" onClick={() => navigate('/app')}>확인</button>}
       </div>
       {confirm && (
         <Confirm title={t.status === 'SCHEDULED' ? '예약을 취소할까요' : '결제를 취소할까요'} body={`카드 결제 ${won(t.amount + t.fee)}이 취소되고 송금되지 않아요.`}
@@ -247,9 +250,9 @@ export function HistoryPage() {
   const s = useStore()
   const [filter, setFilter] = useState(0)
   const filters = ['전체', '진행 중', '완료', '취소']
-  const list = s.transfers.filter((t) => [true, t.status === 'WAITING_SEND' || t.status === 'SCHEDULED', t.status === 'COMPLETED', t.status === 'CANCELED'][filter])
+  const list = s.transfers.filter((t) => [true, t.status === 'WAITING_SEND' || t.status === 'SCHEDULED' || t.status === 'SENDING', t.status === 'COMPLETED', t.status === 'CANCELED'][filter])
   return (
-    <AppPage title="송금 내역">
+    <AppPage title="송금 내역" actions={<Link className="btn btn-secondary btn-sm" to="/app/transfers/bulk">엑셀로 한 번에 송금</Link>}>
       <div className="chips" style={{ marginBottom: 16 }}>
         {filters.map((f, i) => <button key={f} className="chip" aria-pressed={filter === i} onClick={() => setFilter(i)}>{f}</button>)}
       </div>

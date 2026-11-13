@@ -468,3 +468,15 @@ img, svg { display: block; }
   .modal-backdrop { align-items: end; padding: 0; }
   .modal { border-radius: 20px 20px 0 0; max-width: none; }
 }
+
+/* 엑셀 일괄 송금 표 */
+.bulk-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.bulk-table th { text-align: left; font-weight: 600; color: var(--muted); font-size: 12px; padding: 12px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.bulk-table td { padding: 12px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.bulk-table td small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+.bulk-table .r { text-align: right; }
+.bulk-table tr.muted-row td { color: var(--muted); }
+.bulk-st { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.bulk-st.ok { color: var(--green, #059669); }
+.bulk-st.wait { color: var(--muted); }
+.bulk-st.bad { color: var(--danger, #DC2626); white-space: normal; }

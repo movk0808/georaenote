@@ -79,7 +79,7 @@ const toContract = (r: Row): Contract => ({
   rejectReason: r.reject_reason as string | null,
 })
 
-const toStatus = (s: string): TransferStatus => (s === 'PAID' || s === 'SENDING' ? 'WAITING_SEND' : (s as TransferStatus))
+const toStatus = (s: string): TransferStatus => (s === 'PAID' ? 'WAITING_SEND' : (s as TransferStatus))
 
 const toTransfer = (r: Row): Transfer => ({
   id: r.id as string,
@@ -100,6 +100,7 @@ const toTransfer = (r: Row): Transfer => ({
   createdAt: ms(r.paid_at as string),
   completedAt: r.completed_at ? ms(r.completed_at as string) : null,
   status: toStatus(r.status as string),
+  reviewPending: !!r.needs_review && !r.review_approved_at,
 })
 
 let loading = false
@@ -377,6 +378,42 @@ export async function pay(cards: CardCharge[]): Promise<Transfer | null> {
   set({ transfers: [t, ...state.transfers] })
   transferDraft = null
   return t
+}
+
+// ---------- 엑셀 일괄 송금 ----------
+export interface BulkRow { payeeName: string; bank: string; account: string; holder: string; amount: number; method: Method; scheduledDate: string | null; memo: string }
+export interface BulkMatch { contractId: string | null; status: string | null; title: string | null }
+
+/** 줄마다 은행·계좌번호로 내 계약을 찾아요(서버 모드에서는 암호화된 계좌번호를 서버에서 비교) */
+export async function matchBulk(rows: BulkRow[]): Promise<BulkMatch[]> {
+  if (REMOTE) {
+    const r = await rpc<{ contract_id: string | null; status: string | null; title: string | null }[]>('match_bulk_rows', {
+      p_rows: rows.map((x) => ({ bank: x.bank, account: x.account })),
+    })
+    return r.map((x) => ({ contractId: x.contract_id, status: x.status, title: x.title }))
+  }
+  return rows.map((x) => {
+    const acc = x.account.replace(/\D/g, '')
+    const c = state.contracts.find((k) => k.bank === x.bank && k.account.replace(/\D/g, '') === acc)
+    return { contractId: c?.id ?? null, status: c?.status ?? null, title: c?.title ?? null }
+  })
+}
+
+/** 여러 건을 카드 한 장으로 한 번에 결제. 바로송금은 결제와 함께 송금까지 요청해요 */
+export async function payBulk(items: { contractId: string; amount: number; method: Method; scheduledDate: string | null; memo: string }[], company: string, installment: number) {
+  if (REMOTE) {
+    await rpc('pay_bulk', {
+      p_items: items.map((x) => ({ contract_id: x.contractId, amount: x.amount, method: x.method, scheduled_date: x.scheduledDate, memo: x.memo })),
+      p_company: company, p_installment: installment,
+    })
+    await loadRemote()
+    return
+  }
+  for (const x of items) {
+    setTransferDraft({ contractId: x.contractId, amount: x.amount, method: x.method, scheduledDate: x.scheduledDate, memo: x.memo, split: false })
+    const t = await pay([{ company, installment, amount: x.amount + calcFee(x.amount, x.method) }])
+    if (t && x.method === 'INSTANT') await complete(t.id)
+  }
 }
 
 /** 바로송금의 '송금하기' (체험 모드에서는 예약일 도래 처리도 이 함수로) */

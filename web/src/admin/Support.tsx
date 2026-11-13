@@ -172,7 +172,8 @@ export function SettingsPage({ staff }: { staff: Staff }) {
 
   const save = async () => {
     if (!form) return
-    const patch = Object.fromEntries(FIELDS.map(([k]) => [k, Number(form[k])]))
+    const patch: Row = Object.fromEntries(FIELDS.map(([k]) => [k, Number(form[k])]))
+    patch.payout_mode = form.payout_mode; patch.payout_two_person = !!form.payout_two_person; patch.require_admin_mfa = !!form.require_admin_mfa
     const { error } = await adb!.from('settings').update({ ...patch, updated_at: new Date().toISOString() }).eq('id', true)
     if (error) toast(error.message); else { toast('설정을 저장했어요'); settings.reload() }
   }
@@ -194,6 +195,28 @@ export function SettingsPage({ staff }: { staff: Staff }) {
             </label>
           ))}
         </div>
+        {form && (
+          <div className="adm-form-grid" style={{ marginTop: 16 }}>
+            <label className="field"><span>송금 처리 방식</span>
+              <select className="input" disabled={!isAdmin} value={form.payout_mode ?? 'AUTO'} onChange={(e) => setForm({ ...form, payout_mode: e.target.value })}>
+                <option value="AUTO">자동 지급(체험판)</option><option value="BATCH">묶음 송금(은행 대량이체)</option>
+              </select>
+              <small className="hint">묶음 송금이면 보낼 건이 '송금 처리' 메뉴로 모여요</small>
+            </label>
+            <label className="field"><span>송금 묶음 2인 결재</span>
+              <select className="input" disabled={!isAdmin} value={form.payout_two_person ? '1' : '0'} onChange={(e) => setForm({ ...form, payout_two_person: e.target.value === '1' })}>
+                <option value="0">끔(혼자 운영)</option><option value="1">켬(만든 사람 ≠ 결재자)</option>
+              </select>
+              <small className="hint">직원이 2명 이상이 되면 켜 주세요</small>
+            </label>
+            <label className="field"><span>관리자 2단계 로그인</span>
+              <select className="input" disabled={!isAdmin} value={form.require_admin_mfa === false ? '0' : '1'} onChange={(e) => setForm({ ...form, require_admin_mfa: e.target.value === '1' })}>
+                <option value="1">필수(권장)</option><option value="0">끔</option>
+              </select>
+              <small className="hint">OTP를 마친 로그인에서만 관리자 권한이 인정돼요</small>
+            </label>
+          </div>
+        )}
       </section>
 
       <div className="adm-grid2">

@@ -25,7 +25,12 @@ export function ContractNew() {
 function ContractNewForm() {
   const { user } = useStore()
   const [step, setStep] = useState(0)
-  const [d, setD] = useState(() => ({ ...emptyDraft(), senderName: user?.name || user?.nickname || '' }))
+  const [d, setD] = useState(() => {
+    // 엑셀 일괄 송금에서 '계약 등록'을 누르면 그 줄의 거래처 정보를 미리 채워 줘요
+    let pre: Partial<ReturnType<typeof emptyDraft>> = {}
+    try { pre = JSON.parse(sessionStorage.getItem('georaenote-contract-prefill') ?? '{}'); sessionStorage.removeItem('georaenote-contract-prefill') } catch { /* 없으면 빈 칸 */ }
+    return { ...emptyDraft(), senderName: user?.name || user?.nickname || '', ...pre }
+  })
   const [verified, setVerified] = useState(false)
   const [bankOpen, setBankOpen] = useState(false)
   const [done, setDone] = useState(false)
