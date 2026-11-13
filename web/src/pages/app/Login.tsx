@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { Check, ChevronLeft, ChevronRight, ShieldCheck, Smartphone, Zap } from 'lucide-react'
 import { MODE, quickStart, requestCode, SOCIAL, socialLogin, useStore, verifyLink, verifyLogin } from '../../lib/store'
+import { naverReturn } from '../../lib/supabase'
 import { phone as fmtPhone } from '../../lib/format'
 import { SITE } from '../../data/content'
 import { AppPage } from '../../components/Layouts'
@@ -84,6 +85,9 @@ export function PhoneVerify({ mode, onDone, onBack }: { mode: 'login' | 'link'; 
 const KakaoMark = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden><path fill="#191919" d="M12 3C6.5 3 2 6.6 2 11c0 2.8 1.9 5.3 4.7 6.7l-1 3.6c-.1.3.3.6.6.4l4.2-2.8c.5.1 1 .1 1.5.1 5.5 0 10-3.6 10-8S17.5 3 12 3z" /></svg>
 )
+const NaverMark = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden><path fill="#fff" d="M16.3 12.8 7.4 0H0v24h7.7V11.2L16.6 24H24V0h-7.7z" /></svg>
+)
 const GoogleMark = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
     <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.6v3h3.9c2.3-2.1 3.5-5.2 3.5-8.8z" />
@@ -98,10 +102,11 @@ export default function LoginPage() {
   const { user } = useStore()
   const navigate = useNavigate()
   const from = (useLocation().state as { from?: string } | null)?.from ?? '/app'
-  const [step, setStep] = useState<'terms' | 'method' | 'phone'>('terms')
+  // 네이버 로그인에 실패하고 돌아왔으면 방법 고르기 화면에서 이유를 보여줘요
+  const [step, setStep] = useState<'terms' | 'method' | 'phone'>(naverReturn.error ? 'method' : 'terms')
   const [agree, setAgree] = useState({ service: false, privacy: false, marketing: false })
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
+  const [error, setError] = useState(naverReturn.error ?? '')
 
   if (user && step !== 'phone') return <Navigate to={from} replace />
   const all = agree.service && agree.privacy && agree.marketing
@@ -149,6 +154,11 @@ export default function LoginPage() {
             {SOCIAL.includes('kakao') && (
               <button className="btn btn-block" style={{ background: '#FEE500', color: '#191919' }} disabled={busy} onClick={() => run(socialLogin('kakao'))}>
                 <KakaoMark />카카오로 시작하기
+              </button>
+            )}
+            {SOCIAL.includes('naver') && (
+              <button className="btn btn-block" style={{ background: '#03C75A', color: '#fff' }} disabled={busy} onClick={() => run(socialLogin('naver'))}>
+                <NaverMark />네이버로 시작하기
               </button>
             )}
             {SOCIAL.includes('google') && (

@@ -4,7 +4,7 @@ import {
 } from './model'
 import { today } from './format'
 import { QUIZZES } from '../data/content'
-import { callFunction, errText, REMOTE, sb } from './supabase'
+import { callFunction, errText, naverReturn, naverStartUrl, REMOTE, sb, SocialProvider } from './supabase'
 
 export { SOCIAL } from './supabase'
 
@@ -141,6 +141,8 @@ async function loadRemote() {
 }
 
 if (sb) {
+  // 네이버 로그인에서 받은 세션을 넣으면 SIGNED_IN 이벤트로 화면이 갱신돼요
+  if (naverReturn.at && naverReturn.rt) sb.auth.setSession({ access_token: naverReturn.at, refresh_token: naverReturn.rt })
   loadRemote()
   sb.auth.onAuthStateChange((event) => {
     if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') loadRemote()
@@ -212,11 +214,13 @@ export async function quickStart() {
   set({ user: { name: '', phone: '', carrier: '', birth: '', nickname: n, verified: false } })
 }
 
-/** 구글·카카오 로그인. 로그인 후 이 사이트로 돌아오면 자동으로 이어져요 */
-export async function socialLogin(provider: 'google' | 'kakao') {
+/** 구글·카카오·네이버 로그인. 로그인 후 이 사이트로 돌아오면 자동으로 이어져요 */
+export async function socialLogin(provider: SocialProvider) {
   if (!REMOTE) throw new Error('서버가 연결되어야 쓸 수 있어요')
   try { sessionStorage.setItem('georaenote-after-login', '/app') } catch { /* 저장 못 해도 홈으로 가요 */ }
   const redirectTo = `${location.origin}${location.pathname}`
+  // 네이버는 Supabase 기본 지원이 아니라 서버 함수(auth-naver)를 거쳐요
+  if (provider === 'naver') { location.href = naverStartUrl(redirectTo); return }
   const { error } = await sb!.auth.signInWithOAuth({ provider, options: { redirectTo } })
   if (error) throw new Error(errText(error))
 }

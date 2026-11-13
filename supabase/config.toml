@@ -428,3 +428,7 @@ enabled = true
 [functions.auth-phone]
 enabled = true
 verify_jwt = false
+
+[functions.auth-naver]
+enabled = true
+verify_jwt = false
