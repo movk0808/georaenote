@@ -135,7 +135,7 @@ export function DownloadPage() {
   const android = (
     <section className={`install-card${d.android ? ' recommended' : ''}`} aria-labelledby="android-h">
       <h2 id="android-h"><span className="os"><Smartphone size={20} strokeWidth={1.75} /></span>안드로이드</h2>
-      <a className="btn btn-primary" href={SITE.apkUrl}><Download size={18} />APK 내려받기 (v0.1.1 · 약 11MB)</a>
+      <a className="btn btn-primary" href={SITE.apkUrl}><Download size={18} />APK 내려받기 (v0.2.0 · 약 11MB)</a>
       <ol className="install-steps">
         <li><span><b>APK 내려받기</b>를 누르면 파일이 저장돼요. 브라우저가 '유해할 수 있는 파일'이라고 물으면 <b>다운로드</b>를 눌러요.</span></li>
         <li><span>알림창이나 '내 파일 → 다운로드'에서 <b>georaenote.apk</b>를 눌러요.</span></li>
