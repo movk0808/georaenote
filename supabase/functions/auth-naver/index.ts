@@ -15,7 +15,8 @@ const CLIENT_ID = Deno.env.get('NAVER_CLIENT_ID') ?? ''
 const CLIENT_SECRET = Deno.env.get('NAVER_CLIENT_SECRET') ?? ''
 const CALLBACK = `${URL}/functions/v1/auth-naver`
 // 로그인 후 돌아갈 수 있는 주소(그 외 주소는 거절)
-const ALLOWED = ['https://movk0808.github.io/georaenote/', 'http://localhost:5173/']
+// georaenote://auth 는 안드로이드 앱(로그인 후 앱이 다시 열림)
+const ALLOWED = ['https://movk0808.github.io/georaenote/', 'http://localhost:5173/', 'georaenote://auth']
 const COOKIE = 'gn_naver'
 
 const sha256 = async (s: string) =>

@@ -25,6 +25,9 @@ class RemoteApi private constructor(private val context: Context, private val ba
     class ApiException(message: String) : IOException(message)
 
     companion object {
+        /** 소셜 로그인 후 앱으로 돌아오는 주소(AndroidManifest 의 intent-filter 와 같아야 해요) */
+        const val APP_REDIRECT = "georaenote://auth"
+
         fun create(context: Context): RemoteApi? {
             val url = BuildConfig.SUPABASE_URL.trimEnd('/')
             val key = BuildConfig.SUPABASE_ANON_KEY
@@ -117,6 +120,35 @@ class RemoteApi private constructor(private val context: Context, private val ba
     fun quickStart() {
         val res = JSONObject(http("POST", "/auth/v1/signup", JSONObject().put("data", JSONObject()), auth = false))
         saveSession(res.getString("access_token"), res.getString("refresh_token"), res.optLong("expires_at", now() + res.optLong("expires_in", 3600)), res.getJSONObject("user").getString("id"))
+        rpc("ensure_profile")
+    }
+
+    /**
+     * 카카오·네이버·구글 로그인 시작 주소. 브라우저에서 로그인하면 [APP_REDIRECT]로 앱이 다시 열려요.
+     * 카카오·구글은 Supabase 기본 로그인, 네이버는 서버 함수(auth-naver)를 거쳐요.
+     */
+    fun socialStartUrl(provider: String): String =
+        if (provider == "naver") "$base/functions/v1/auth-naver?start=1&redirect=${enc(APP_REDIRECT)}"
+        else "$base/auth/v1/authorize?provider=$provider&redirect_to=${enc(APP_REDIRECT)}"
+
+    /**
+     * 브라우저 로그인에서 돌아온 주소(georaenote://auth#...)를 받아 세션을 저장해요.
+     * 실패 이유가 담겨 오면 그 문장으로 예외를 던져요.
+     */
+    fun completeSocial(redirect: Uri) {
+        val p = (redirect.encodedFragment ?: redirect.encodedQuery ?: "").split('&').mapNotNull {
+            val i = it.indexOf('='); if (i <= 0) null else it.substring(0, i) to Uri.decode(it.substring(i + 1).replace('+', ' '))
+        }.toMap()
+        p["gn_naver_error"]?.let { throw ApiException(it) }
+        p["error_description"]?.let { throw ApiException("로그인하지 못했어요 ($it)") }
+        p["error"]?.let { throw ApiException("로그인하지 못했어요 ($it)") }
+        val access = p["access_token"] ?: p["gn_naver_at"] ?: throw ApiException("로그인 정보를 받지 못했어요")
+        val refresh = p["refresh_token"] ?: p["gn_naver_rt"] ?: throw ApiException("로그인 정보를 받지 못했어요")
+        // 토큰 안의 사용자 번호(sub)와 만료 시각(exp)
+        val claims = runCatching {
+            JSONObject(String(android.util.Base64.decode(access.split('.')[1], android.util.Base64.URL_SAFE or android.util.Base64.NO_PADDING or android.util.Base64.NO_WRAP)))
+        }.getOrNull() ?: throw ApiException("로그인 정보를 읽지 못했어요")
+        saveSession(access, refresh, claims.optLong("exp", now() + 3600), claims.getString("sub"))
         rpc("ensure_profile")
     }
 

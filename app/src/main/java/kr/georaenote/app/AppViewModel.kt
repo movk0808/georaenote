@@ -176,6 +176,28 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     /** 본인인증을 마치면 돌아갈 화면 */
     var afterVerify: String? = null
 
+    // ---------------- 카카오·네이버·구글 로그인 ----------------
+
+    /** 로그인 브라우저를 열 주소. 서버 모드가 아니면 null */
+    fun socialStartUrl(provider: String): String? = remote?.socialStartUrl(provider)
+
+    /** 소셜 로그인 처리 중(브라우저에서 돌아와 세션을 저장하는 동안) */
+    var socialBusy by mutableStateOf(false); private set
+    var socialError by mutableStateOf<String?>(null)
+    /** 소셜 로그인이 끝날 때마다 1씩 늘어요. 화면은 이 값이 바뀌면 홈으로 이동해요 */
+    var socialDone by mutableStateOf(0); private set
+
+    /** MainActivity 가 georaenote://auth 로 열리면 불러요 */
+    fun handleAuthRedirect(uri: android.net.Uri?) {
+        val api = remote ?: return
+        if (uri == null || uri.scheme != "georaenote" || uri.host != "auth") return
+        socialBusy = true; socialError = null
+        io<Unit>({ r ->
+            socialBusy = false
+            r.onSuccess { socialDone++ }.onFailure { socialError = it.message }
+        }) { api.completeSocial(uri); reloadRemote() }
+    }
+
     fun logout() {
         val api = remote
         if (api == null) { repo.saveUser(null); user = null; return }

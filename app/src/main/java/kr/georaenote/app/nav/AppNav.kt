@@ -11,6 +11,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -65,6 +66,8 @@ fun AppNav(vm: AppViewModel) {
             context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(Content.WEB_URL)))
         }
     }
+    // 카카오·네이버·구글 로그인을 마치고 앱으로 돌아오면 홈으로
+    LaunchedEffect(vm.socialDone) { if (vm.socialDone > 0) nav.goHome() }
 
     NavHost(
         navController = nav,

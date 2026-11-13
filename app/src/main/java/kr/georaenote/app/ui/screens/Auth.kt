@@ -1,5 +1,7 @@
 package kr.georaenote.app.ui.screens
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -37,6 +39,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kr.georaenote.app.AppViewModel
@@ -217,11 +220,26 @@ fun VerifyScreen(vm: AppViewModel, mode: String, carrier: String, back: () -> Un
 fun StartScreen(vm: AppViewModel, back: () -> Unit, go: (String) -> Unit, onDone: () -> Unit) {
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
+    // 브라우저로 소셜 로그인을 열어요. 끝나면 georaenote://auth 로 앱이 다시 열리고 홈으로 이동해요
+    val social: (String) -> Unit = { provider ->
+        vm.socialStartUrl(provider)?.let { url ->
+            vm.socialError = null
+            runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
+                .onFailure { error = "브라우저를 열 수 없어요" }
+        }
+    }
+    val waiting = busy || vm.socialBusy
     Screen(onBack = back, bottom = {
         Column(Modifier.fillMaxWidth().background(Color.White).navigationBarsPadding().padding(horizontal = 20.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            PrimaryButton(if (busy) "준비 중" else "바로 시작하기", enabled = !busy) {
+            PrimaryButton(if (waiting) "준비 중" else "바로 시작하기", enabled = !waiting) {
                 busy = true; error = null
                 vm.quickStart { r -> busy = false; r.onSuccess { onDone() }.onFailure { error = it.message } }
+            }
+            if (vm.isRemote) {
+                SocialButton("카카오로 시작하기", Color(0xFFFEE500), Color(0xFF191919), enabled = !waiting) { social("kakao") }
+                SocialButton("네이버로 시작하기", Color(0xFF03C75A), Color.White, enabled = !waiting) { social("naver") }
+                SocialButton("구글로 시작하기", Color.White, Brand.Ink, border = Color(0xFFDADCE0), enabled = !waiting) { social("google") }
             }
             GrayButton("휴대폰 번호로 로그인", Modifier.fillMaxWidth()) { go(Routes.carrier("login")) }
         }
@@ -231,7 +249,19 @@ fun StartScreen(vm: AppViewModel, back: () -> Unit, go: (String) -> Unit, onDone
             Text("어떻게 시작할까요", style = androidx.compose.material3.MaterialTheme.typography.headlineMedium, color = Brand.Ink)
             Spacer(Modifier.height(10.dp))
             Text("처음이라면 바로 시작해 보세요. 닉네임은 자동으로 정해지고 설정에서 바꿀 수 있어요.\n\n이미 본인인증을 한 분은 휴대폰 번호로 로그인하면 웹과 같은 계정으로 이어져요.", fontSize = 14.sp, color = Brand.SubInk, lineHeight = 21.sp)
-            error?.let { Spacer(Modifier.height(16.dp)); Text(it, color = Brand.Danger, fontSize = 13.sp) }
+            (error ?: vm.socialError)?.let { Spacer(Modifier.height(16.dp)); Text(it, color = Brand.Danger, fontSize = 13.sp) }
+            if (vm.socialBusy) { Spacer(Modifier.height(16.dp)); Text("로그인 정보를 확인하고 있어요", color = Brand.SubInk, fontSize = 13.sp) }
         }
     }
+}
+
+/** 카카오·네이버·구글 버튼(각 회사 색) */
+@Composable
+private fun SocialButton(text: String, bg: Color, fg: Color, border: Color? = null, enabled: Boolean = true, onClick: () -> Unit) {
+    Box(
+        Modifier.fillMaxWidth().height(52.dp).clip(RoundedCornerShape(14.dp)).background(bg)
+            .then(if (border != null) Modifier.border(1.dp, border, RoundedCornerShape(14.dp)) else Modifier)
+            .clickable(enabled = enabled, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) { Text(text, color = fg, fontSize = 16.sp, fontWeight = FontWeight.SemiBold) }
 }
