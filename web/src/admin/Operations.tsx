@@ -93,6 +93,8 @@ function ContractDrawer({ row, staff, onClose, onChanged }: { row: Row; staff: S
     return (data ?? []) as Row[]
   }, [row.id])
   const canReview = staff.role !== 'VIEWER'
+  // 계좌번호는 암호화돼 있어 평소엔 가린 번호만 보여요. 전체 번호를 보면 감사 기록이 남아요
+  const [full, setFull] = useState<string | null>(null)
   const openDoc = async (path: string | null, name: string) => {
     if (!path) { toast(`${name}은(는) 체험용 샘플 서류예요`); return }
     const { data, error } = await adb!.storage.from('proofs').createSignedUrl(path, 120)
@@ -111,7 +113,7 @@ function ContractDrawer({ row, staff, onClose, onChanged }: { row: Row; staff: S
         <Kv k="연락처" v={row.profiles?.phone} />
         <Kv k="계약 유형" v={TYPE_LABEL[row.type]} />
         <Kv k="거래처" v={row.payee_name} />
-        <Kv k="입금 계좌" v={`${row.bank} ${row.account}`} />
+        <Kv k="입금 계좌" v={<>{row.bank} {full ?? row.account}{!full && canReview && <button type="button" className="link" style={{ border: 0, background: 'none', marginLeft: 8 }} onClick={() => arpc<string>('admin_reveal_account', { p_contract_id: row.id }).then(setFull).catch((e: Error) => toast(e.message))}>전체 번호 보기</button>}</>} />
         <Kv k="예금주" v={row.holder} />
         <Kv k="송금자명" v={row.sender_name} />
         {row.address && <Kv k="주소" v={row.address} />}
@@ -206,6 +208,7 @@ function TransferDrawer({ row, staff, onClose, onChanged }: { row: Row; staff: S
   return (
     <Drawer title={`${row.payee_name} · ${won(row.amount)}`} onClose={onClose}>
       <span className={`pill ${TRANSFER_STATUS[row.status].cls}`}>{TRANSFER_STATUS[row.status].label}</span>
+      {row.needs_review && <span className={`pill ${row.review_approved_at ? 'pill-ok' : 'pill-review'}`} style={{ marginLeft: 6 }}>{row.review_approved_at ? '고액 확인됨' : '고액 · 관리자 확인 필요'}</span>}
       <dl>
         <Kv k="사장님" v={`${row.profiles?.name ?? '-'} · ${row.profiles?.business_name ?? ''}`} />
         <Kv k="받는 곳" v={`${row.bank} ${row.masked_account} (${row.holder})`} />
@@ -224,6 +227,9 @@ function TransferDrawer({ row, staff, onClose, onChanged }: { row: Row; staff: S
       {(row.card_charges ?? []).map((c: Row) => (
         <div key={c.id} className="adm-log"><span>{c.company}</span>{c.installment > 1 ? `${c.installment}개월` : '일시불'} · <b className="num">{won(c.amount)}</b><span className="muted num">{c.approval_no}</span></div>
       ))}
+      {staff.role !== 'VIEWER' && open && row.needs_review && !row.review_approved_at && (
+        <button className="btn btn-primary btn-sm" style={{ marginBottom: 8 }} disabled={busy} onClick={() => confirm('고액 송금을 확인했어요. 바로송금은 지금 지급되고, 예약송금은 입금일에 지급돼요') && act('admin_approve_transfer', { p_id: row.id })}>고액 송금 확인</button>
+      )}
       {staff.role === 'ADMIN' && open && (
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button className="btn btn-secondary btn-sm" disabled={busy} onClick={() => { const m = prompt('실패 사유'); if (m) act('admin_mark_transfer', { p_id: row.id, p_status: 'FAILED', p_note: m }) }}>실패로 표시</button>

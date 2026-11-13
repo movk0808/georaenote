@@ -40,10 +40,16 @@ Deno.serve(async (req) => {
   if (!/^01\d{8,9}$/.test(phone)) return json({ error: '휴대폰 번호를 확인해 주세요' }, 400)
 
   if (body.action === 'request') {
+    // 같은 번호로 1시간에 5번까지만 보내요(문자 폭탄·비용 남용 방지)
+    const { data: prev } = await admin.from('phone_codes').select('request_count, window_start').eq('phone', phone).maybeSingle()
+    const inWindow = prev && Date.now() - new Date(prev.window_start).getTime() < 3600_000
+    if (inWindow && prev.request_count >= 5) return json({ error: '인증번호 요청이 너무 많아요. 1시간 뒤에 다시 시도해 주세요' }, 429)
     const code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 1_000_000).padStart(6, '0')
     const { error } = await admin.from('phone_codes').upsert({
       phone, code_hash: await sha256(`${phone}:${code}`), attempts: 0,
       expires_at: new Date(Date.now() + CODE_TTL_SEC * 1000).toISOString(),
+      request_count: inWindow ? prev.request_count + 1 : 1,
+      window_start: inWindow ? prev.window_start : new Date().toISOString(),
     })
     if (error) return json({ error: '인증번호를 만들지 못했어요' }, 500)
     // TODO(실서비스): 문자 발송 또는 본인인증 대행사 연동

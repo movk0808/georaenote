@@ -21,13 +21,15 @@ export interface Staff { user_id: string; email: string | null; name: string; ro
 
 /** 관리자 로그인 상태와 직원 정보 */
 export function useStaff() {
-  const [state, setState] = useState<{ loading: boolean; email: string | null; staff: Staff | null }>({ loading: true, email: null, staff: null })
+  const [state, setState] = useState<{ loading: boolean; email: string | null; staff: Staff | null; aal2: boolean }>({ loading: true, email: null, staff: null, aal2: false })
   const load = async () => {
-    if (!adb) { setState({ loading: false, email: null, staff: null }); return }
+    if (!adb) { setState({ loading: false, email: null, staff: null, aal2: false }); return }
     const { data: { session } } = await adb.auth.getSession()
-    if (!session) { setState({ loading: false, email: null, staff: null }); return }
+    if (!session) { setState({ loading: false, email: null, staff: null, aal2: false }); return }
     const { data } = await adb.from('staff').select('*').eq('user_id', session.user.id).maybeSingle()
-    setState({ loading: false, email: session.user.email ?? null, staff: data as Staff | null })
+    // 2단계 로그인(OTP)까지 마쳤는지. 직원 권한은 aal2 세션에서만 인정돼요
+    const { data: aal } = await adb.auth.mfa.getAuthenticatorAssuranceLevel()
+    setState({ loading: false, email: session.user.email ?? null, staff: data as Staff | null, aal2: aal?.currentLevel === 'aal2' })
   }
   useEffect(() => {
     load()
