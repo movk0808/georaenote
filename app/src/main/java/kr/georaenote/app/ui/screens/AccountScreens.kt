@@ -73,7 +73,7 @@ private data class ChatMsg(val mine: Boolean, val text: String)
  * 실제 상담은 채팅 상담 SDK(예: 채널톡) 연동으로 바꿀 자리입니다.
  */
 @Composable
-fun SupportScreen(back: () -> Unit, go: (String) -> Unit) {
+fun SupportScreen(back: () -> Unit, go: (String) -> Unit, onInquiry: (String) -> Unit = {}) {
     val context = LocalContext.current
     val msgs = remember {
         mutableStateListOf(ChatMsg(false, "안녕하세요, ${Content.SERVICE_NAME} 고객센터예요.\n궁금한 점을 남겨 주시면 빠르게 답변드릴게요.\n\n운영 시간: ${Content.CS_HOURS}"))
@@ -108,7 +108,7 @@ fun SupportScreen(back: () -> Unit, go: (String) -> Unit) {
             }
             IconButton(onClick = {
                 val q = input.trim()
-                if (q.isNotEmpty() && pending == null) { msgs.add(ChatMsg(true, q)); input = ""; pending = q }
+                if (q.isNotEmpty() && pending == null) { msgs.add(ChatMsg(true, q)); input = ""; pending = q; onInquiry(q) }
             }) { Icon(Icons.AutoMirrored.Filled.Send, "보내기", tint = if (input.isBlank()) Brand.Faint else Brand.Primary) }
         }
     }) {
@@ -138,6 +138,7 @@ fun SupportScreen(back: () -> Unit, go: (String) -> Unit) {
 /** 설정·내 정보 */
 @Composable
 fun SettingsScreen(vm: AppViewModel, back: () -> Unit, go: (String) -> Unit, onLoggedOut: () -> Unit) {
+    val context = LocalContext.current
     var confirmLogout by remember { mutableStateOf(false) }
     var confirmWithdraw by remember { mutableStateOf(false) }
     Screen("설정", back, background = Brand.Background) {
@@ -209,7 +210,7 @@ fun SettingsScreen(vm: AppViewModel, back: () -> Unit, go: (String) -> Unit, onL
             onDismissRequest = { confirmWithdraw = false },
             title = { Text("회원 탈퇴할까요?") },
             text = { Text("이 기기에 저장된 계정, 계약, 송금 기록, 마일리지가 모두 지워지고 되돌릴 수 없어요.") },
-            confirmButton = { TextButton({ confirmWithdraw = false; vm.withdraw(); onLoggedOut() }) { Text("탈퇴하기", color = Brand.Danger) } },
+            confirmButton = { TextButton({ confirmWithdraw = false; vm.withdraw { r -> r.onSuccess { onLoggedOut() }.onFailure { android.widget.Toast.makeText(context, it.message, android.widget.Toast.LENGTH_LONG).show() } } }) { Text("탈퇴하기", color = Brand.Danger) } },
             dismissButton = { TextButton({ confirmWithdraw = false }) { Text("취소") } },
             containerColor = Color.White,
         )

@@ -15,8 +15,17 @@ android {
         applicationId = "kr.georaenote.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "0.1.1"
+        versionCode = 3
+        versionName = "0.2.0"
+
+        // 서버(Supabase) 연결: local.properties 나 환경 변수의 값을 넣어요. 비어 있으면 기기 안에만 저장하는 체험 모드
+        val local = Properties().apply {
+            val f = rootProject.file("local.properties")
+            if (f.exists()) f.inputStream().use { load(it) }
+        }
+        fun cfg(name: String) = (local.getProperty(name) ?: System.getenv(name) ?: "").replace("\"", "")
+        buildConfigField("String", "SUPABASE_URL", "\"${cfg("SUPABASE_URL")}\"")
+        buildConfigField("String", "SUPABASE_ANON_KEY", "\"${cfg("SUPABASE_ANON_KEY")}\"")
     }
 
     // 배포용 서명: keystore/keystore.properties 가 있을 때만 씁니다(이 폴더는 GitHub에 올리지 않아요).
@@ -51,6 +60,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

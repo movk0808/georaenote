@@ -5,6 +5,7 @@ import { AppPage } from '../../components/Layouts'
 import { Confirm, Kv, ListPicker, StatusPill, TypeBadge } from '../../components/ui'
 import { BANKS, CONTRACT_TYPES, ContractType, maskAccount } from '../../lib/model'
 import { deleteContract, emptyDraft, submitContract, useStore } from '../../lib/store'
+import { toast } from '../../components/ui'
 import { date, won } from '../../lib/format'
 
 const STEPS = 4
@@ -21,6 +22,7 @@ export function ContractNew() {
   const [verified, setVerified] = useState(false)
   const [bankOpen, setBankOpen] = useState(false)
   const [done, setDone] = useState(false)
+  const [busy, setBusy] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const type = d.type ? CONTRACT_TYPES[d.type] : null
   const up = (patch: Partial<typeof d>) => setD({ ...d, ...patch })
@@ -44,7 +46,10 @@ export function ContractNew() {
 
   const next = () => {
     if (step < STEPS - 1) setStep(step + 1)
-    else { submitContract(d); setDone(true) }
+    else {
+      setBusy(true)
+      submitContract(d).then(() => setDone(true)).catch((e: Error) => toast(e.message)).finally(() => setBusy(false))
+    }
   }
 
   return (
@@ -125,8 +130,11 @@ export function ContractNew() {
                   <label className="drop">
                     <Paperclip size={18} />사진 또는 PDF 첨부
                     <input ref={fileRef} type="file" accept="image/*,application/pdf" multiple hidden onChange={(e) => {
-                      const names = Array.from(e.target.files ?? []).map((f) => f.name)
-                      up({ proofs: Array.from(new Set([...d.proofs, ...names])).slice(0, 5) })
+                      const picked = Array.from(e.target.files ?? []).filter((f) => f.size <= 10 * 1024 * 1024)
+                      if (picked.length < (e.target.files?.length ?? 0)) toast('10MB가 넘는 파일은 뺐어요')
+                      const files = { ...(d.files ?? {}) }
+                      picked.forEach((f) => { files[f.name] = f })
+                      up({ proofs: Array.from(new Set([...d.proofs, ...picked.map((f) => f.name)])).slice(0, 5), files })
                       if (fileRef.current) fileRef.current.value = ''
                     }} />
                   </label>
@@ -143,7 +151,7 @@ export function ContractNew() {
 
         <div className="form-foot">
           {step > 0 && <button type="button" className="btn btn-secondary" onClick={() => setStep(step - 1)}>이전</button>}
-          <button className="btn btn-primary" disabled={!canNext}>{step === STEPS - 1 ? '등록하기' : '다음'}</button>
+          <button className="btn btn-primary" disabled={!canNext || busy}>{busy ? '등록 중' : step === STEPS - 1 ? '등록하기' : '다음'}</button>
         </div>
       </form>
       {bankOpen && <ListPicker title="은행 선택" options={BANKS} onClose={() => setBankOpen(false)} onPick={(b) => { up({ bank: b }); setVerified(false); setBankOpen(false) }} />}
@@ -188,7 +196,7 @@ export function ContractDetail() {
         <button className="btn btn-secondary" onClick={() => setConfirm(true)}>삭제</button>
         <button className="btn btn-primary" disabled={c.status !== 'APPROVED'} onClick={() => navigate(`/app/transfer/${c.id}`)}>송금하기</button>
       </div>
-      {confirm && <Confirm title="계약을 삭제할까요" body="삭제한 계약은 되돌릴 수 없어요. 송금 내역은 그대로 남아요." confirmLabel="삭제" danger onClose={() => setConfirm(false)} onConfirm={() => { deleteContract(c.id); navigate('/app') }} />}
+      {confirm && <Confirm title="계약을 삭제할까요" body="삭제한 계약은 되돌릴 수 없어요. 송금 내역은 그대로 남아요." confirmLabel="삭제" danger onClose={() => setConfirm(false)} onConfirm={() => { deleteContract(c.id).then(() => navigate('/app')).catch((e: Error) => toast(e.message)) }} />}
     </AppPage>
   )
 }

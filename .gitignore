@@ -13,3 +13,5 @@ web/dist/
 keystore/
 *.jks
 *.keystore
+.env.local
+web/.env.local

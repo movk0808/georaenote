@@ -254,6 +254,7 @@ private class CardRow(company: String = "", installment: Int = 1, amount: Long =
 /** 결제: 카드사·할부 선택(모의 승인). 실제 서비스에서는 PG 결제창으로 대체됩니다. */
 @Composable
 fun PayScreen(vm: AppViewModel, back: () -> Unit, onPaid: (String) -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val d = vm.transferDraft
     if (d == null) {
         Screen("결제", back) { Text("결제 정보가 없어요. 다시 시도해 주세요.", Modifier.padding(20.dp)) }
@@ -271,8 +272,9 @@ fun PayScreen(vm: AppViewModel, back: () -> Unit, onPaid: (String) -> Unit) {
     if (processing) {
         LaunchedEffect(Unit) {
             delay(1_400)
-            val t = vm.pay(rows.map { CardCharge(it.company, it.installment, it.amount) })
-            if (t != null) onPaid(t.id)
+            vm.pay(rows.map { CardCharge(it.company, it.installment, it.amount) }) { r ->
+                r.onSuccess { onPaid(it) }.onFailure { processing = false; android.widget.Toast.makeText(context, it.message, android.widget.Toast.LENGTH_LONG).show() }
+            }
         }
     }
 
@@ -380,6 +382,7 @@ fun ListDialog(title: String, options: List<String>, onDismiss: () -> Unit, onPi
 /** 결제 직후 화면이자 송금 영수증. 바로송금은 '송금하기'를 눌러야 입금됩니다. */
 @Composable
 fun TransferResultScreen(vm: AppViewModel, id: String, afterPay: Boolean, back: () -> Unit, goHome: () -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val t = vm.transfer(id)
     if (t == null) {
         Screen("송금 내역", back) { Text("송금 내역을 찾을 수 없어요.", Modifier.padding(20.dp)) }
@@ -388,7 +391,7 @@ fun TransferResultScreen(vm: AppViewModel, id: String, afterPay: Boolean, back: 
     var sending by remember { mutableStateOf(false) }
     var confirmCancel by remember { mutableStateOf(false) }
     if (sending) {
-        LaunchedEffect(Unit) { delay(1_000); vm.complete(t.id); sending = false }
+        LaunchedEffect(Unit) { delay(800); vm.complete(t.id) { r -> sending = false; r.onFailure { android.widget.Toast.makeText(context, it.message, android.widget.Toast.LENGTH_LONG).show() } } }
     }
     val title = if (afterPay) "송금하기" else "송금 내역"
     Screen(title, if (afterPay) null else back, bottom = {
@@ -437,7 +440,7 @@ fun TransferResultScreen(vm: AppViewModel, id: String, afterPay: Boolean, back: 
             onDismissRequest = { confirmCancel = false },
             title = { Text(if (t.status == TransferStatus.SCHEDULED) "예약을 취소할까요?" else "결제를 취소할까요?") },
             text = { Text("카드 결제 ${Format.won(t.total)}이 취소되고 송금되지 않아요.") },
-            confirmButton = { TextButton({ confirmCancel = false; vm.cancel(t.id) }) { Text("취소하기", color = Brand.Danger) } },
+            confirmButton = { TextButton({ confirmCancel = false; vm.cancel(t.id) { r -> r.onFailure { android.widget.Toast.makeText(context, it.message, android.widget.Toast.LENGTH_LONG).show() } } }) { Text("취소하기", color = Brand.Danger) } },
             dismissButton = { TextButton({ confirmCancel = false }) { Text("닫기") } },
             containerColor = Color.White,
         )
@@ -451,6 +454,7 @@ private fun StatusHeader(t: Transfer) {
         TransferStatus.SCHEDULED -> Triple("예약 완료!", "${t.scheduledDate}에 거래처 계좌로 입금돼요.", Brand.Primary)
         TransferStatus.COMPLETED -> Triple("송금 완료!", "${t.payeeName}에 ${Format.won(t.amount)}을 보냈어요.", Brand.Primary)
         TransferStatus.CANCELED -> Triple("취소된 송금이에요", "카드 결제가 취소되었어요.", Brand.Faint)
+        TransferStatus.FAILED -> Triple("송금에 실패했어요", "고객센터에서 확인 후 다시 처리해 드릴게요.", Brand.Danger)
     }
     Box(Modifier.size(78.dp).clip(RoundedCornerShape(39.dp)).background(if (t.status == TransferStatus.CANCELED) Brand.Background else Brand.PrimarySoft), contentAlignment = Alignment.Center) {
         Icon(

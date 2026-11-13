@@ -54,13 +54,14 @@ data class Contract(
     val proofs: List<String>,
     val createdAt: Long,
     val status: ContractStatus,
+    val rejectReason: String? = null,
 ) {
     val maskedAccount: String
         get() = if (account.length <= 4) account else "*".repeat((account.length - 4).coerceAtMost(6)) + account.takeLast(4)
 }
 
 enum class TransferStatus(val label: String) {
-    WAITING_SEND("송금 대기"), SCHEDULED("예약됨"), COMPLETED("송금 완료"), CANCELED("취소")
+    WAITING_SEND("송금 대기"), SCHEDULED("예약됨"), COMPLETED("송금 완료"), CANCELED("취소"), FAILED("송금 실패")
 }
 
 data class CardCharge(val company: String, val installment: Int, val amount: Long) {

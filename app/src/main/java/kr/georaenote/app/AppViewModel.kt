@@ -1,10 +1,15 @@
 package kr.georaenote.app
 
 import android.app.Application
+import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kr.georaenote.app.data.CardCharge
 import kr.georaenote.app.data.Content
 import kr.georaenote.app.data.Contract
@@ -13,13 +18,16 @@ import kr.georaenote.app.data.ContractType
 import kr.georaenote.app.data.Fees
 import kr.georaenote.app.data.Format
 import kr.georaenote.app.data.MileageLog
+import kr.georaenote.app.data.RemoteApi
 import kr.georaenote.app.data.Repository
 import kr.georaenote.app.data.Transfer
 import kr.georaenote.app.data.TransferMethod
 import kr.georaenote.app.data.TransferStatus
 import kr.georaenote.app.data.User
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 import java.util.UUID
+import kotlin.random.Random
 
 /** 계약 등록 중 단계별로 채워지는 임시 값 */
 data class ContractDraft(
@@ -32,6 +40,8 @@ data class ContractDraft(
     val addressDetail: String = "",
     val senderName: String = "",
     val proofs: List<String> = emptyList(),
+    /** 실제로 고른 파일(서버 모드에서 업로드). 샘플 서류는 이름만 있어요 */
+    val files: Map<String, Uri> = emptyMap(),
 )
 
 /** 송금 화면에서 결제 화면으로 넘기는 값 */
@@ -44,18 +54,28 @@ data class TransferDraft(
     val split: Boolean,
 )
 
+data class QuizResult(val correct: Boolean, val answer: Int, val explain: String)
+
+/**
+ * 앱 상태. 서버(Supabase) 설정이 있으면 서버에 저장하고 웹앱과 같은 데이터를 보며,
+ * 없으면 기기 안에만 저장하는 체험 모드로 동작해요. 화면은 어느 모드든 같은 함수를 부릅니다.
+ * 서버를 쓰는 함수는 결과를 onDone 으로 돌려줘요(실패하면 Result.failure 에 사용자에게 보일 문장).
+ */
 class AppViewModel(app: Application) : AndroidViewModel(app) {
     private val repo = Repository(app)
+    private val remote: RemoteApi? = RemoteApi.create(app)
+    val isRemote: Boolean get() = remote != null
 
-    /** 데모: 계약 등록 후 이 시간이 지나면 자동 승인됩니다. 실제 서비스에서는 심사 결과를 서버에서 받아옵니다. */
+    /** 체험 모드: 계약 등록 후 이 시간이 지나면 자동 승인됩니다(서버 모드는 서버 설정을 따름) */
     private val demoReviewMillis = 10_000L
 
     var onboarded by mutableStateOf(repo.onboarded); private set
-    var user by mutableStateOf(repo.loadUser()); private set
-    var contracts by mutableStateOf(repo.loadContracts()); private set
-    var transfers by mutableStateOf(repo.loadTransfers()); private set
-    var mileageLogs by mutableStateOf(repo.loadMileageLogs()); private set
+    var user by mutableStateOf(if (remote == null) repo.loadUser() else null); private set
+    var contracts by mutableStateOf(if (remote == null) repo.loadContracts() else emptyList()); private set
+    var transfers by mutableStateOf(if (remote == null) repo.loadTransfers() else emptyList()); private set
+    var mileageLogs by mutableStateOf(if (remote == null) repo.loadMileageLogs() else emptyList()); private set
     var notificationsOn by mutableStateOf(repo.notificationsOn); private set
+    private var remoteQuizDone by mutableStateOf(false)
 
     var contractDraft by mutableStateOf(ContractDraft())
     var transferDraft by mutableStateOf<TransferDraft?>(null)
@@ -64,6 +84,26 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val mileageBalance: Long get() = mileageLogs.sumOf { it.amount }
 
     init { refresh() }
+
+    /** 서버 작업을 백그라운드에서 실행하고 결과를 화면 스레드로 돌려줘요 */
+    private fun <T> io(onDone: (Result<T>) -> Unit, block: suspend () -> T) {
+        viewModelScope.launch {
+            val r = withContext(Dispatchers.IO) { runCatching { block() } }
+            onDone(r.recoverCatching { e -> throw IllegalStateException(e.message ?: "요청을 처리하지 못했어요") })
+        }
+    }
+
+    private suspend fun reloadRemote() {
+        val api = remote ?: return
+        if (!api.signedIn) { user = null; return }
+        val snap = withContext(Dispatchers.IO) { runCatching { api.load() } }.getOrNull() ?: return
+        user = snap.user
+        contracts = snap.contracts
+        transfers = snap.transfers
+        mileageLogs = snap.mileage
+        notificationsOn = snap.notificationsOn
+        remoteQuizDone = snap.quizDoneToday
+    }
 
     fun finishOnboarding() {
         repo.onboarded = true
@@ -76,33 +116,53 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun hidePopupToday() { repo.popupHiddenDate = Format.today().toString() }
     fun hidePopupForever() { repo.popupNeverShow = true }
 
-    fun login(name: String, phone: String, carrier: String, birth: String) {
-        val u = User(name.trim(), phone.filter(Char::isDigit), carrier, birth)
-        repo.saveUser(u)
-        user = u
+    // ---------------- 로그인 ----------------
+
+    /** 인증번호 요청. 체험 서버/체험 모드에서는 번호를 돌려줘요(실서비스에서는 빈 문자열, 문자로 발송) */
+    fun requestCode(phone: String, onDone: (Result<String>) -> Unit) {
+        val api = remote
+        if (api == null) { onDone(Result.success(String.format("%06d", Random.nextInt(0, 1_000_000)))); return }
+        io(onDone) { api.requestCode(phone) }
+    }
+
+    fun verify(name: String, phone: String, carrier: String, birth: String, code: String, expected: String, onDone: (Result<Unit>) -> Unit) {
+        val api = remote
+        if (api == null) {
+            if (code != expected) { onDone(Result.failure(IllegalStateException("인증번호가 일치하지 않아요"))); return }
+            val u = User(name.trim(), phone.filter(Char::isDigit), carrier, birth)
+            repo.saveUser(u); user = u
+            onDone(Result.success(Unit)); return
+        }
+        io(onDone) { api.verify(phone.filter(Char::isDigit), code, name.trim(), birth, carrier); reloadRemote() }
     }
 
     fun logout() {
-        repo.saveUser(null)
-        user = null
+        val api = remote
+        if (api == null) { repo.saveUser(null); user = null; return }
+        viewModelScope.launch(Dispatchers.IO) { api.logout() }
+        user = null; contracts = emptyList(); transfers = emptyList(); mileageLogs = emptyList()
     }
 
-    /** 회원 탈퇴(데모): 기기에 저장된 계정·계약·송금 기록을 지웁니다. */
-    fun withdraw() {
-        repo.clearAccount()
-        user = null
-        contracts = emptyList()
-        transfers = emptyList()
-        mileageLogs = emptyList()
+    /** 회원 탈퇴: 서버 모드는 앱·웹 모두에서 계정이 지워져요 */
+    fun withdraw(onDone: (Result<Unit>) -> Unit) {
+        val api = remote
+        if (api == null) {
+            repo.clearAccount()
+            user = null; contracts = emptyList(); transfers = emptyList(); mileageLogs = emptyList()
+            onDone(Result.success(Unit)); return
+        }
+        io<Unit>({ r -> if (r.isSuccess) { user = null; contracts = emptyList(); transfers = emptyList(); mileageLogs = emptyList() }; onDone(r) }) { api.withdraw() }
     }
 
     fun setNotifications(on: Boolean) {
         repo.notificationsOn = on
         notificationsOn = on
+        remote?.let { api -> viewModelScope.launch(Dispatchers.IO) { runCatching { api.setNotifications(on) } } }
     }
 
-    /** 데모 심사 승인, 예약송금 입금일 처리 */
+    /** 서버 모드: 서버 최신 상태 읽기 / 체험 모드: 데모 심사 승인, 예약송금 입금일 처리 */
     fun refresh() {
+        if (remote != null) { viewModelScope.launch { reloadRemote() }; return }
         val now = System.currentTimeMillis()
         if (contracts.any { it.status == ContractStatus.REVIEW && now - it.createdAt >= demoReviewMillis }) {
             contracts = contracts.map {
@@ -112,77 +172,81 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
         val today = Format.today()
         transfers.filter {
-            it.status == TransferStatus.SCHEDULED && it.scheduledDate != null &&
-                !LocalDate.parse(it.scheduledDate).isAfter(today)
-        }.forEach { complete(it.id) }
+            it.status == TransferStatus.SCHEDULED && it.scheduledDate != null && !LocalDate.parse(it.scheduledDate).isAfter(today)
+        }.forEach { completeLocal(it.id) }
     }
 
     fun contract(id: String) = contracts.firstOrNull { it.id == id }
     fun transfer(id: String) = transfers.firstOrNull { it.id == id }
 
-    fun submitContract(): String {
+    // ---------------- 계약 ----------------
+    fun submitContract(onDone: (Result<String>) -> Unit) {
         val d = contractDraft
         val type = d.type ?: ContractType.ETC
-        val id = UUID.randomUUID().toString()
         val address = listOf(d.address, d.addressDetail).filter { it.isNotBlank() }.joinToString(" ")
+        val api = remote
+        if (api != null) {
+            io<String>({ r -> if (r.isSuccess) contractDraft = ContractDraft(); onDone(r) }) {
+                val id = api.submitContract(type, d.payeeName.trim(), d.bank, d.account.filter(Char::isDigit), d.holder.trim(), d.senderName.trim(), address, d.proofs, d.files)
+                reloadRemote(); id
+            }
+            return
+        }
         val c = Contract(
-            id = id,
-            type = type,
-            title = "${d.payeeName.trim()} ${type.label}",
-            payeeName = d.payeeName.trim(),
-            bank = d.bank,
-            account = d.account.filter(Char::isDigit),
-            holder = d.holder.trim(),
-            senderName = d.senderName.trim(),
-            address = address,
-            proofs = d.proofs,
-            createdAt = System.currentTimeMillis(),
-            status = ContractStatus.REVIEW,
+            id = UUID.randomUUID().toString(), type = type, title = "${d.payeeName.trim()} ${type.label}", payeeName = d.payeeName.trim(),
+            bank = d.bank, account = d.account.filter(Char::isDigit), holder = d.holder.trim(), senderName = d.senderName.trim(),
+            address = address, proofs = d.proofs, createdAt = System.currentTimeMillis(), status = ContractStatus.REVIEW,
         )
         contracts = listOf(c) + contracts
         repo.saveContracts(contracts)
         contractDraft = ContractDraft()
-        return id
+        onDone(Result.success(c.id))
     }
 
-    fun deleteContract(id: String) {
+    fun deleteContract(id: String, onDone: (Result<Unit>) -> Unit) {
+        val api = remote
+        if (api != null) { io(onDone) { api.deleteContract(id); reloadRemote() }; return }
         contracts = contracts.filterNot { it.id == id }
         repo.saveContracts(contracts)
+        onDone(Result.success(Unit))
     }
 
-    /** 카드 결제(모의 승인) 후 송금 건을 만듭니다. */
-    fun pay(cards: List<CardCharge>): Transfer? {
-        val d = transferDraft ?: return null
-        val c = contract(d.contractId) ?: return null
+    // ---------------- 송금 ----------------
+
+    /** 카드 결제(모의 승인) 후 송금 건 생성. PG 연동 후에는 PG 결제창 → 승인 웹훅으로 바뀝니다 */
+    fun pay(cards: List<CardCharge>, onDone: (Result<String>) -> Unit) {
+        val d = transferDraft ?: run { onDone(Result.failure(IllegalStateException("결제 정보가 없어요"))); return }
+        val api = remote
+        if (api != null) {
+            io<String>({ r -> if (r.isSuccess) transferDraft = null; onDone(r) }) {
+                val id = api.pay(d.contractId, d.amount, d.method, d.scheduledDate, d.memo, cards)
+                reloadRemote(); id
+            }
+            return
+        }
+        val c = contract(d.contractId) ?: run { onDone(Result.failure(IllegalStateException("계약을 찾을 수 없어요"))); return }
         val fee = Fees.fee(d.amount, d.method)
         val t = Transfer(
-            id = UUID.randomUUID().toString(),
-            contractId = c.id,
-            contractTitle = c.title,
-            payeeName = c.payeeName,
-            bank = c.bank,
-            maskedAccount = c.maskedAccount,
-            holder = c.holder,
-            senderName = c.senderName,
-            memo = d.memo,
-            amount = d.amount,
-            fee = fee,
-            method = d.method,
-            scheduledDate = d.scheduledDate,
-            cards = cards,
-            mileage = Fees.mileage(fee),
-            createdAt = System.currentTimeMillis(),
-            completedAt = null,
-            status = if (d.method == TransferMethod.INSTANT) TransferStatus.WAITING_SEND else TransferStatus.SCHEDULED,
+            id = UUID.randomUUID().toString(), contractId = c.id, contractTitle = c.title, payeeName = c.payeeName, bank = c.bank,
+            maskedAccount = c.maskedAccount, holder = c.holder, senderName = c.senderName, memo = d.memo, amount = d.amount, fee = fee,
+            method = d.method, scheduledDate = d.scheduledDate, cards = cards, mileage = Fees.mileage(fee), createdAt = System.currentTimeMillis(),
+            completedAt = null, status = if (d.method == TransferMethod.INSTANT) TransferStatus.WAITING_SEND else TransferStatus.SCHEDULED,
         )
         transfers = listOf(t) + transfers
         repo.saveTransfers(transfers)
         transferDraft = null
-        return t
+        onDone(Result.success(t.id))
     }
 
-    /** 바로송금의 '송금하기' 또는 예약일 도래 시 송금 완료 처리 */
-    fun complete(id: String) {
+    /** 바로송금의 '송금하기' */
+    fun complete(id: String, onDone: (Result<Unit>) -> Unit) {
+        val api = remote
+        if (api != null) { io(onDone) { api.send(id); reloadRemote() }; return }
+        completeLocal(id)
+        onDone(Result.success(Unit))
+    }
+
+    private fun completeLocal(id: String) {
         val t = transfer(id) ?: return
         if (t.status == TransferStatus.COMPLETED || t.status == TransferStatus.CANCELED) return
         val firstEver = transfers.none { it.status == TransferStatus.COMPLETED }
@@ -195,23 +259,40 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         repo.saveMileageLogs(mileageLogs)
     }
 
-    fun cancel(id: String) {
-        transfers = transfers.map {
-            if (it.id == id && it.status != TransferStatus.COMPLETED) it.copy(status = TransferStatus.CANCELED) else it
-        }
+    fun cancel(id: String, onDone: (Result<Unit>) -> Unit = {}) {
+        val api = remote
+        if (api != null) { io(onDone) { api.cancel(id); reloadRemote() }; return }
+        transfers = transfers.map { if (it.id == id && it.status != TransferStatus.COMPLETED) it.copy(status = TransferStatus.CANCELED) else it }
         repo.saveTransfers(transfers)
+        onDone(Result.success(Unit))
     }
 
-    fun quizDoneToday(): Boolean = repo.quizDoneDate == Format.today().toString()
+    // ---------------- 퀴즈·문의 ----------------
+    fun quizDoneToday(): Boolean = if (remote != null) remoteQuizDone else repo.quizDoneDate == Format.today().toString()
 
-    fun todayQuizIndex(): Int = (Format.today().toEpochDay() % Content.quizzes.size).toInt()
+    /** 웹·서버와 같은 규칙: 2026-01-01부터 지난 날 수로 오늘의 문제를 골라요 */
+    fun todayQuizIndex(): Int = (ChronoUnit.DAYS.between(LocalDate.of(2026, 1, 1), Format.today()) % Content.quizzes.size).toInt().let { if (it < 0) it + Content.quizzes.size else it }
 
-    /** 정답이면 10M 적립. 하루 한 번만 참여 가능 */
-    fun answerQuiz(correct: Boolean) {
+    fun answerQuiz(choice: Int, onDone: (Result<QuizResult>) -> Unit) {
+        val api = remote
+        if (api != null) {
+            io(onDone) { val (ok, ans, exp) = api.answerQuiz(choice); reloadRemote(); QuizResult(ok, ans, exp) }
+            return
+        }
+        val q = Content.quizzes[todayQuizIndex()]
+        val ok = choice == q.answer
         repo.quizDoneDate = Format.today().toString()
-        if (correct) {
+        if (ok) {
             mileageLogs = listOf(MileageLog("매일 퀴즈 정답", 10, System.currentTimeMillis())) + mileageLogs
             repo.saveMileageLogs(mileageLogs)
         }
+        onDone(Result.success(QuizResult(ok, q.answer, q.explain)))
+    }
+
+    /** 고객센터 채팅 문의를 서버에 남겨 관리자가 답할 수 있게 해요(체험 모드에서는 남기지 않음) */
+    fun sendInquiry(message: String) {
+        val api = remote ?: return
+        if (user == null) return
+        viewModelScope.launch(Dispatchers.IO) { runCatching { api.inquiry(message) } }
     }
 }

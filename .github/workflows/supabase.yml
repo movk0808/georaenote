@@ -1,0 +1,46 @@
+# supabase/ 폴더(DB 마이그레이션·서버 함수·인증 설정)가 바뀌어 main에 push되면 Supabase 프로젝트에 자동 반영합니다.
+# 필요한 값: 저장소 Settings → Secrets → SUPABASE_ACCESS_TOKEN (Supabase Access Tokens에서 발급)
+#           저장소 Settings → Variables → SUPABASE_PROJECT_REF (예: xqrsafvgkbzetlimiwok)
+name: Deploy Supabase
+
+on:
+  push:
+    branches: [main]
+    paths: ['supabase/**', '.github/workflows/supabase.yml']
+  workflow_dispatch:
+
+concurrency:
+  group: supabase
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+    steps:
+      - name: 설정 확인
+        id: check
+        run: |
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ] || [ -z "$PROJECT_REF" ]; then
+            echo "SUPABASE_ACCESS_TOKEN 시크릿이나 SUPABASE_PROJECT_REF 변수가 없어 건너뜁니다."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.check.outputs.ready == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.check.outputs.ready == 'true'
+        with:
+          node-version: 20
+      - name: 프로젝트 연결
+        if: steps.check.outputs.ready == 'true'
+        run: npx --yes supabase@latest link --project-ref "$PROJECT_REF" < /dev/null
+      - name: DB 마이그레이션
+        if: steps.check.outputs.ready == 'true'
+        run: npx --yes supabase@latest db push --remote --yes < /dev/null
+      - name: 서버 함수 배포
+        if: steps.check.outputs.ready == 'true'
+        run: npx --yes supabase@latest functions deploy --use-api --yes < /dev/null

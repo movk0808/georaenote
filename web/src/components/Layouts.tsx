@@ -5,7 +5,7 @@ import { refresh, useStore } from '../lib/store'
 import InstallHint from './InstallHint'
 import { SITE } from '../data/content'
 
-const logoSrc = `${import.meta.env.BASE_URL}icon.svg`
+const logoSrc = `${import.meta.env.BASE_URL}icon-round.png`
 
 export function Logo() {
   return (

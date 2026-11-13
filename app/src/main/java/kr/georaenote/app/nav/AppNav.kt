@@ -118,7 +118,7 @@ fun AppNav(vm: AppViewModel) {
         composable(Routes.MAGAZINE) { MagazineScreen(back, go) }
         composable(Routes.ARTICLE) { e -> ArticleScreen(e.arguments?.getString("id")?.toIntOrNull() ?: 0, back) }
         composable(Routes.INSTALLMENT) { InstallmentScreen(back) }
-        composable(Routes.SUPPORT) { SupportScreen(back, go) }
+        composable(Routes.SUPPORT) { SupportScreen(back, go) { vm.sendInquiry(it) } }
         composable(Routes.SETTINGS) { SettingsScreen(vm, back, go) { nav.goHome() } }
         composable(Routes.MILEAGE) { MileageScreen(vm, back, go) }
     }

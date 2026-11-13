@@ -192,14 +192,14 @@ export function DownloadPage() {
         </div>
 
         <div className="card" style={{ marginTop: 48, display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
-          <img src={`${base}icon.svg`} alt="" width={40} height={40} />
+          <img src={`${base}icon-round.png`} alt="" width={40} height={40} />
           <div style={{ flex: 1, minWidth: 200 }}>
             <strong style={{ fontWeight: 600 }}>로고·아이콘</strong>
             <div className="sub" style={{ fontSize: 14 }}>홍보물이나 안내문에 쓸 수 있는 거래노트 로고 파일이에요</div>
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <a className="btn btn-secondary btn-sm" href={`${base}icon-512.png`} download="georaenote-icon-512.png">아이콘 PNG</a>
-            <a className="btn btn-secondary btn-sm" href={`${base}icon.svg`} download="georaenote-icon.svg">아이콘 SVG</a>
+            <a className="btn btn-secondary btn-sm" href={`${base}icon-512.png`} download="georaenote-icon-512.png">3D 아이콘 PNG</a>
+            <a className="btn btn-secondary btn-sm" href={`${base}icon.svg`} download="georaenote-icon.svg">평면 아이콘 SVG</a>
             <a className="btn btn-secondary btn-sm" href={`${base}logo.svg`} download="georaenote-logo.svg">로고 SVG</a>
           </div>
         </div>

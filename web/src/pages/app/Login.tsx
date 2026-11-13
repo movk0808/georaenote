@@ -1,12 +1,11 @@
 import { useState } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { Check, ChevronLeft, ChevronRight } from 'lucide-react'
-import { login, useStore } from '../../lib/store'
+import { MODE, requestCode, useStore, verifyLogin } from '../../lib/store'
 import { phone as fmtPhone } from '../../lib/format'
 import { SITE } from '../../data/content'
 
 const CARRIERS = ['SKT', 'KT', 'LG U+', 'SKT 알뜰폰', 'KT 알뜰폰', 'LG U+ 알뜰폰']
-const newCode = () => String(Math.floor(Math.random() * 1_000_000)).padStart(6, '0')
 
 /** 약관 동의 → 통신사 선택 → 본인 정보·인증번호. 실제 서비스에서는 본인인증 기관(PASS 등) 연동으로 바뀝니다. */
 export default function LoginPage() {
@@ -19,7 +18,9 @@ export default function LoginPage() {
   const [name, setName] = useState('')
   const [birth, setBirth] = useState('')
   const [phone, setPhone] = useState('')
-  const [sent, setSent] = useState('')
+  const [sent, setSent] = useState(false)
+  const [demoCode, setDemoCode] = useState('')
+  const [busy, setBusy] = useState(false)
   const [code, setCode] = useState('')
   const [error, setError] = useState('')
 
@@ -78,24 +79,30 @@ export default function LoginPage() {
       {step === 'verify' && (
         <form className="enter form-stack" onSubmit={(e) => {
           e.preventDefault()
-          if (!sent) { setSent(newCode()); setError(''); return }
-          if (code === sent) { login(name, phone, carrier, birth); navigate(from, { replace: true }) }
-          else setError('인증번호가 일치하지 않아요')
+          if (busy) return
+          setBusy(true); setError('')
+          const run = sent
+            ? verifyLogin({ phone, code, expected: demoCode, name, birth, carrier }).then(() => navigate(from, { replace: true }))
+            : requestCode(phone).then((c) => { setDemoCode(c); setSent(true) })
+          run.catch((err: Error) => setError(err.message)).finally(() => setBusy(false))
         }}>
           <h1 className="step-title">본인 정보를<br />입력해 주세요</h1>
           <label className="field"><span>통신사</span><input className="input" value={carrier} readOnly tabIndex={-1} /></label>
-          <label className="field"><span>이름</span><input className="input" value={name} onChange={(e) => setName(e.target.value.slice(0, 20))} placeholder="홍길동" disabled={!!sent} autoComplete="name" /></label>
-          <label className="field"><span>생년월일 8자리</span><input className="input num" inputMode="numeric" value={birth} onChange={(e) => setBirth(e.target.value.replace(/\D/g, '').slice(0, 8))} placeholder="19900101" disabled={!!sent} /></label>
-          <label className="field"><span>휴대폰 번호</span><input className="input num" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 11))} placeholder="01012345678" disabled={!!sent} autoComplete="tel" /></label>
+          <label className="field"><span>이름</span><input className="input" value={name} onChange={(e) => setName(e.target.value.slice(0, 20))} placeholder="홍길동" disabled={sent} autoComplete="name" /></label>
+          <label className="field"><span>생년월일 8자리</span><input className="input num" inputMode="numeric" value={birth} onChange={(e) => setBirth(e.target.value.replace(/\D/g, '').slice(0, 8))} placeholder="19900101" disabled={sent} /></label>
+          <label className="field"><span>휴대폰 번호</span><input className="input num" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 11))} placeholder="01012345678" disabled={sent} autoComplete="tel" /></label>
           {sent && (
             <>
               <label className="field"><span>인증번호</span><input className="input num" inputMode="numeric" autoFocus value={code} onChange={(e) => { setCode(e.target.value.replace(/\D/g, '').slice(0, 6)); setError('') }} placeholder="6자리 입력" autoComplete="one-time-code" /></label>
-              <div className="notice-box">체험판 인증번호: <strong className="num">{sent}</strong><br />{fmtPhone(phone)}로 보낸 것으로 가정해요. 실제 서비스에서는 문자로 받아요</div>
-              <button type="button" className="link" style={{ border: 0, background: 'none', justifySelf: 'start', padding: 0 }} onClick={() => { setSent(newCode()); setCode('') }}>인증번호 다시 받기</button>
+              {demoCode
+                ? <div className="notice-box">체험판 인증번호: <strong className="num">{demoCode}</strong><br />{fmtPhone(phone)}로 보낸 것으로 가정해요. 실제 서비스에서는 문자로 받아요</div>
+                : <div className="notice-box">{fmtPhone(phone)}로 인증번호를 보냈어요</div>}
+              {MODE === 'remote' && <p className="hint" style={{ margin: 0 }}>같은 번호로 로그인하면 안드로이드 앱에서도 같은 계약과 송금 내역을 볼 수 있어요</p>}
+              <button type="button" className="link" style={{ border: 0, background: 'none', justifySelf: 'start', padding: 0 }} onClick={() => { setCode(''); requestCode(phone).then(setDemoCode).catch((err: Error) => setError(err.message)) }}>인증번호 다시 받기</button>
             </>
           )}
           {error && <p className="hint error" style={{ margin: 0 }}>{error}</p>}
-          <button className="btn btn-primary btn-block" disabled={sent ? code.length !== 6 : !infoOk}>{sent ? '확인' : '인증번호 받기'}</button>
+          <button className="btn btn-primary btn-block" disabled={busy || (sent ? code.length !== 6 : !infoOk)}>{busy ? '확인 중' : sent ? '확인' : '인증번호 받기'}</button>
         </form>
       )}
     </div>

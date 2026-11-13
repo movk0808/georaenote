@@ -161,21 +161,23 @@ fun VerifyScreen(vm: AppViewModel, carrier: String, back: () -> Unit, onDone: ()
     var birth by rememberSaveable { mutableStateOf("") }
     var phone by rememberSaveable { mutableStateOf("") }
     var code by rememberSaveable { mutableStateOf("") }
-    var sentCode by rememberSaveable { mutableStateOf("") }
+    var sent by rememberSaveable { mutableStateOf(false) }
+    var demoCode by rememberSaveable { mutableStateOf("") }
+    var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     val infoOk = name.isNotBlank() && birth.length == 8 && phone.length in 10..11
 
     Screen(onBack = back, bottom = {
         BottomBar {
-            if (sentCode.isEmpty()) {
-                PrimaryButton("인증번호 받기", enabled = infoOk) {
-                    sentCode = String.format("%06d", Random.nextInt(0, 1_000_000)); error = null
+            if (!sent) {
+                PrimaryButton(if (busy) "보내는 중" else "인증번호 받기", enabled = infoOk && !busy) {
+                    busy = true; error = null
+                    vm.requestCode(phone) { r -> busy = false; r.onSuccess { demoCode = it; sent = true }.onFailure { error = it.message } }
                 }
             } else {
-                PrimaryButton("확인", enabled = code.length == 6) {
-                    if (code == sentCode) {
-                        vm.login(name, phone, carrier, birth); onDone()
-                    } else error = "인증번호가 일치하지 않아요."
+                PrimaryButton(if (busy) "확인 중" else "확인", enabled = code.length == 6 && !busy) {
+                    busy = true; error = null
+                    vm.verify(name, phone, carrier, birth, code, demoCode) { r -> busy = false; r.onSuccess { onDone() }.onFailure { error = it.message } }
                 }
             }
         }
@@ -184,18 +186,20 @@ fun VerifyScreen(vm: AppViewModel, carrier: String, back: () -> Unit, onDone: ()
             Spacer(Modifier.height(4.dp))
             Text("본인 정보를\n입력해 주세요", style = androidx.compose.material3.MaterialTheme.typography.headlineMedium, color = Brand.Ink)
             LineField(carrier, {}, "", label = "통신사", readOnly = true)
-            LineField(name, { name = it.take(20) }, "홍길동", label = "이름", enabled = sentCode.isEmpty())
-            LineField(birth, { birth = it.filter(Char::isDigit).take(8) }, "19900101", label = "생년월일 8자리", keyboardType = KeyboardType.Number, enabled = sentCode.isEmpty())
-            LineField(phone, { phone = it.filter(Char::isDigit).take(11) }, "01012345678", label = "휴대폰 번호", keyboardType = KeyboardType.Phone, enabled = sentCode.isEmpty())
-            if (sentCode.isNotEmpty()) {
+            LineField(name, { name = it.take(20) }, "홍길동", label = "이름", enabled = !sent)
+            LineField(birth, { birth = it.filter(Char::isDigit).take(8) }, "19900101", label = "생년월일 8자리", keyboardType = KeyboardType.Number, enabled = !sent)
+            LineField(phone, { phone = it.filter(Char::isDigit).take(11) }, "01012345678", label = "휴대폰 번호", keyboardType = KeyboardType.Phone, enabled = !sent)
+            if (sent) {
                 LineField(code, { code = it.filter(Char::isDigit).take(6); error = null }, "6자리 입력", label = "인증번호", keyboardType = KeyboardType.NumberPassword)
                 Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Brand.PrimarySoft).padding(14.dp)) {
                     Text(
-                        "체험판 인증번호: $sentCode\n(${Format.phone(phone)}로 보낸 것으로 가정합니다. 실제 서비스에서는 문자로 받습니다.)",
+                        if (demoCode.isNotEmpty()) "체험판 인증번호: $demoCode\n(${Format.phone(phone)}로 보낸 것으로 가정해요. 실제 서비스에서는 문자로 받아요)"
+                        else "${Format.phone(phone)}로 인증번호를 보냈어요",
                         fontSize = 13.sp, color = Brand.Primary,
                     )
                 }
-                Text("인증번호 다시 받기", Modifier.clickable { sentCode = String.format("%06d", Random.nextInt(0, 1_000_000)); code = "" }, fontSize = 13.sp, color = Brand.SubInk)
+                if (vm.isRemote) Text("같은 번호로 로그인하면 웹에서도 같은 계약과 송금 내역을 볼 수 있어요", fontSize = 12.sp, color = Brand.Faint)
+                Text("인증번호 다시 받기", Modifier.clickable { code = ""; vm.requestCode(phone) { r -> r.onSuccess { demoCode = it }.onFailure { error = it.message } } }, fontSize = 13.sp, color = Brand.SubInk)
             }
             error?.let { Text(it, color = Brand.Danger, fontSize = 13.sp) }
         }

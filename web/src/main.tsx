@@ -1,4 +1,4 @@
-import { StrictMode } from 'react'
+import { lazy, StrictMode, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
 import { HashRouter, Route, Routes } from 'react-router-dom'
 import './styles.css'
@@ -12,6 +12,8 @@ import AppHome from './pages/app/AppHome'
 import { ContractDetail, ContractNew } from './pages/app/Contracts'
 import { HistoryPage, PayPage, TransferPage, TransferResult } from './pages/app/Transfers'
 import { ChatPage, MileagePage, SettingsPage } from './pages/app/Account'
+
+const AdminApp = lazy(() => import('./admin/AdminApp'))
 
 // GitHub Pages에서 새로고침해도 깨지지 않도록 해시 주소(#/...)를 씁니다.
 createRoot(document.getElementById('root')!).render(
@@ -34,6 +36,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="login" element={<LoginPage />} />
           <Route path="*" element={<Landing />} />
         </Route>
+        <Route path="admin/*" element={<Suspense fallback={null}><AdminApp /></Suspense>} />
         <Route path="app" element={<AppLayout />}>
           <Route index element={<AppHome />} />
           <Route path="contracts/new" element={<ContractNew />} />

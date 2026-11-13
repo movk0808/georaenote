@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { CalendarDays, CircleCheck, Clock, X, Zap } from 'lucide-react'
 import { AppPage } from '../../components/Layouts'
-import { Confirm, Kv, ListPicker, Spinner } from '../../components/ui'
+import { Confirm, Kv, ListPicker, Spinner, toast } from '../../components/ui'
 import {
   CARD_COMPANIES, fee, installmentText, maskAccount, MAX_AMOUNT, Method, METHODS, mileageOf, MIN_AMOUNT, rateText, total, Transfer,
   TRANSFER_STATUS_LABEL, CardCharge,
@@ -114,8 +114,9 @@ export function PayPage() {
   useEffect(() => {
     if (!processing) return
     const t = setTimeout(() => {
-      const res = pay(rows.map<CardCharge>((r) => ({ company: r.company, installment: r.installment, amount: Number(r.amountText || 0) })))
-      if (res) navigate(`/app/transfers/${res.id}?paid=1`, { replace: true })
+      pay(rows.map<CardCharge>((r) => ({ company: r.company, installment: r.installment, amount: Number(r.amountText || 0) })))
+        .then((res) => { if (res) navigate(`/app/transfers/${res.id}?paid=1`, { replace: true }) })
+        .catch((e: Error) => { toast(e.message); setProcessing(false) })
     }, 1400)
     return () => clearTimeout(t)
   }, [processing, rows, navigate])
@@ -176,6 +177,7 @@ function StatusHead({ t }: { t: Transfer }) {
     SCHEDULED: { cls: 'wait', icon: <Clock size={30} />, title: '예약 완료', sub: `${t.scheduledDate}에 거래처 계좌로 입금돼요` },
     COMPLETED: { cls: '', icon: <CircleCheck size={30} />, title: '송금 완료', sub: `${t.payeeName}에 ${won(t.amount)}을 보냈어요` },
     CANCELED: { cls: 'cancel', icon: <X size={30} />, title: '취소된 송금이에요', sub: '카드 결제가 취소되었어요' },
+    FAILED: { cls: 'cancel', icon: <X size={30} />, title: '송금에 실패했어요', sub: '고객센터에서 확인 후 다시 처리해 드릴게요' },
   }[t.status]
   return (
     <div className="result-head">
@@ -196,7 +198,7 @@ export function TransferResult() {
   const t = s.transfers.find((x) => x.id === id)
   useEffect(() => {
     if (!sending || !t) return
-    const timer = setTimeout(() => { complete(t.id); setSending(false) }, 1000)
+    const timer = setTimeout(() => { complete(t.id).catch((e: Error) => toast(e.message)).finally(() => setSending(false)) }, 800)
     return () => clearTimeout(timer)
   }, [sending, t])
   if (!t) return <AppPage title="송금 내역" back="/app/transfers"><p className="empty">송금 내역을 찾을 수 없어요</p></AppPage>
@@ -233,7 +235,7 @@ export function TransferResult() {
       </div>
       {confirm && (
         <Confirm title={t.status === 'SCHEDULED' ? '예약을 취소할까요' : '결제를 취소할까요'} body={`카드 결제 ${won(t.amount + t.fee)}이 취소되고 송금되지 않아요.`}
-          confirmLabel="취소하기" danger onClose={() => setConfirm(false)} onConfirm={() => cancel(t.id)} />
+          confirmLabel="취소하기" danger onClose={() => setConfirm(false)} onConfirm={() => { cancel(t.id).catch((e: Error) => toast(e.message)) }} />
       )}
       {sending && <Spinner label="거래처 계좌로 송금 중이에요" />}
     </AppPage>

@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ChevronRight, Phone, Send } from 'lucide-react'
 import { AppPage } from '../../components/Layouts'
-import { Confirm } from '../../components/ui'
-import { logout, mileageBalance, setNotifications, useStore, withdraw } from '../../lib/store'
+import { logout, mileageBalance, MODE, sendInquiry, setNotifications, useStore, withdraw } from '../../lib/store'
+import { Confirm, toast } from '../../components/ui'
 import { dateTime, mileage, phone } from '../../lib/format'
 import { FAQS, SITE } from '../../data/content'
 
@@ -52,7 +52,7 @@ export function SettingsPage() {
       <div className="card">
         <label className="check" style={{ justifyContent: 'space-between' }}>
           알림 받기
-          <input type="checkbox" checked={s.notificationsOn} onChange={(e) => setNotifications(e.target.checked)} />
+          <input type="checkbox" checked={s.notificationsOn} onChange={(e) => { setNotifications(e.target.checked).catch((err: Error) => toast(err.message)) }} />
         </label>
       </div>
       <div className="card menu-list" style={{ padding: '4px 20px' }}>
@@ -66,8 +66,8 @@ export function SettingsPage() {
         <button className="btn btn-secondary" onClick={() => setDialog('logout')}>로그아웃</button>
         <button className="btn btn-ghost" style={{ color: 'var(--danger)' }} onClick={() => setDialog('withdraw')}>회원 탈퇴</button>
       </div>
-      {dialog === 'logout' && <Confirm title="로그아웃할까요" body="계약과 송금 기록은 이 브라우저에 그대로 남아요." confirmLabel="로그아웃" onClose={() => setDialog(null)} onConfirm={() => { logout(); navigate('/') }} />}
-      {dialog === 'withdraw' && <Confirm title="회원 탈퇴할까요" body="이 브라우저에 저장된 계정, 계약, 송금 기록, 마일리지가 모두 지워지고 되돌릴 수 없어요." confirmLabel="탈퇴하기" danger onClose={() => setDialog(null)} onConfirm={() => { withdraw(); navigate('/') }} />}
+      {dialog === 'logout' && <Confirm title="로그아웃할까요" body={MODE === 'remote' ? '같은 번호로 다시 로그인하면 계약과 송금 기록을 그대로 볼 수 있어요.' : '계약과 송금 기록은 이 브라우저에 그대로 남아요.'} confirmLabel="로그아웃" onClose={() => setDialog(null)} onConfirm={() => { logout().then(() => navigate('/')) }} />}
+      {dialog === 'withdraw' && <Confirm title="회원 탈퇴할까요" body="계정, 계약, 송금 기록, 마일리지가 모두 지워지고 되돌릴 수 없어요. 앱과 웹 모두에서 지워져요." confirmLabel="탈퇴하기" danger onClose={() => setDialog(null)} onConfirm={() => { withdraw().then(() => navigate('/')).catch((err: Error) => toast(err.message)) }} />}
     </AppPage>
   )
 }
@@ -109,7 +109,7 @@ export function ChatPage() {
         e.preventDefault()
         const q = input.trim()
         if (!q || pending) return
-        setMsgs((m) => [...m, { mine: true, text: q }]); setInput(''); setPending(q)
+        setMsgs((m) => [...m, { mine: true, text: q }]); setInput(''); setPending(q); sendInquiry(q)
       }}>
         <input className="input" value={input} onChange={(e) => setInput(e.target.value.slice(0, 300))} placeholder="메시지를 입력해 주세요" aria-label="메시지" />
         <button className="btn btn-primary" aria-label="보내기" disabled={!input.trim()}><Send size={18} /></button>

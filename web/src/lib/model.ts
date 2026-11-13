@@ -45,11 +45,12 @@ export interface Contract {
   proofs: string[]
   createdAt: number
   status: ContractStatus
+  rejectReason?: string | null
 }
 
-export type TransferStatus = 'WAITING_SEND' | 'SCHEDULED' | 'COMPLETED' | 'CANCELED'
+export type TransferStatus = 'WAITING_SEND' | 'SCHEDULED' | 'COMPLETED' | 'CANCELED' | 'FAILED'
 export const TRANSFER_STATUS_LABEL: Record<TransferStatus, string> = {
-  WAITING_SEND: '송금 대기', SCHEDULED: '예약됨', COMPLETED: '송금 완료', CANCELED: '취소',
+  WAITING_SEND: '송금 대기', SCHEDULED: '예약됨', COMPLETED: '송금 완료', CANCELED: '취소', FAILED: '송금 실패',
 }
 
 export interface CardCharge { company: string; installment: number; amount: number }

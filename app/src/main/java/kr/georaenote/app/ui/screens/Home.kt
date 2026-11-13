@@ -160,9 +160,7 @@ private fun HomeHeader(vm: AppViewModel, go: (String) -> Unit) {
             }
         } else {
             Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(26.dp).clip(RoundedCornerShape(8.dp)).background(Brand.navyFill), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Outlined.ReceiptLong, null, tint = Color.White, modifier = Modifier.size(16.dp))
-                }
+                Image(painterResource(R.drawable.app_mark), null, Modifier.size(30.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(Content.SERVICE_NAME, fontSize = 19.sp, fontWeight = FontWeight.ExtraBold, color = Brand.Ink)
             }

@@ -1,0 +1,100 @@
+/* 관리자 페이지: 사용자 화면과 같은 토큰(styles.css :root)을 쓰되, 오래 보는 화면이라 더 촘촘하고 차분하게 */
+.adm-shell { display: grid; grid-template-columns: 232px 1fr; min-height: 100vh; background: var(--bg); }
+.adm-side { position: sticky; top: 0; height: 100vh; background: var(--card); border-right: 1px solid var(--line); display: flex; flex-direction: column; padding: 16px 10px; gap: 20px; }
+.adm-brand { display: flex; align-items: center; gap: 8px; padding: 4px 8px; font-weight: 600; font-size: 16px; color: var(--navy); }
+.adm-brand img { width: 26px; height: 26px; }
+.adm-brand span { font-size: 12px; font-weight: 500; color: var(--muted); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; }
+.adm-side nav { display: grid; gap: 2px; }
+.adm-side nav a { display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 10px; border-radius: 8px; color: var(--sub); font-size: 14px; font-weight: 500; transition: background-color 150ms var(--ease), color 150ms var(--ease); }
+.adm-side nav a:hover { background: var(--raised); color: var(--ink); }
+.adm-side nav a.active { background: var(--primary-soft); color: var(--primary); }
+.adm-me { margin-top: auto; display: flex; align-items: center; gap: 8px; padding: 10px 8px 0; border-top: 1px solid var(--line); }
+.adm-me div { flex: 1; display: grid; font-size: 13px; }
+.adm-me strong { font-weight: 600; }
+.adm-me span { color: var(--muted); font-size: 12px; }
+.adm-me button { border: 0; background: none; color: var(--muted); width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; }
+.adm-me button:hover { background: var(--raised); color: var(--ink); }
+
+.adm-main { min-width: 0; }
+.adm-page { padding: 28px 32px 64px; max-width: 1440px; display: grid; gap: 16px; align-content: start; }
+.adm-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.adm-head h1 { margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -0.01em; }
+.adm-head .sub { margin: 4px 0 0; font-size: 14px; }
+.adm-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); padding: 20px; min-width: 0; }
+.adm-card h1 { font-size: 20px; font-weight: 600; margin: 0 0 8px; }
+.adm-card-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; }
+.adm-card-head h2 { margin: 0; font-size: 15px; font-weight: 600; }
+.adm-sub { margin: 20px 0 10px; font-size: 13px; font-weight: 600; color: var(--sub); }
+.adm-center { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: var(--bg); }
+.adm-center .adm-card { padding: 28px; }
+
+.seg-sm { display: inline-flex; background: var(--raised); border-radius: 10px; padding: 3px; }
+.seg-sm button { border: 0; background: none; height: 30px; padding: 0 14px; border-radius: 8px; color: var(--sub); font-size: 13px; font-weight: 500; }
+.seg-sm button[aria-pressed='true'] { background: var(--card); color: var(--ink); box-shadow: var(--shadow-sm); }
+
+.adm-queue { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.adm-queue a { display: flex; align-items: baseline; gap: 8px; padding: 12px 14px; border-radius: 12px; background: var(--card); border: 1px solid var(--line); font-size: 13px; color: var(--sub); transition: border-color 150ms var(--ease); }
+.adm-queue a:hover { border-color: #c4ccd8; }
+.adm-queue a b { font-size: 20px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+.adm-queue a.warn b { color: var(--danger); }
+
+.adm-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.adm-stat { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); padding: 18px 20px; display: grid; gap: 4px; }
+.adm-stat > span:first-child { font-size: 13px; color: var(--sub); }
+.adm-stat strong { font-size: 26px; font-weight: 600; letter-spacing: -0.01em; }
+.adm-stat > span:last-child { font-size: 12px; }
+.adm-grid2 { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; }
+
+.adm-tip { background: var(--ink); color: #fff; border-radius: 10px; padding: 10px 12px; font-size: 12px; box-shadow: var(--shadow-float); min-width: 160px; }
+.adm-tip .t { color: #94A3B8; margin-bottom: 6px; font-variant-numeric: tabular-nums; }
+.adm-tip .r { display: flex; align-items: center; gap: 6px; }
+.adm-tip .r i { width: 8px; height: 8px; border-radius: 2px; }
+.adm-tip .r b { margin-left: auto; font-weight: 600; font-variant-numeric: tabular-nums; }
+.adm-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--sub); }
+.adm-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.adm-legend i { width: 10px; height: 10px; border-radius: 3px; }
+
+.adm-bars { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.adm-bars li { display: grid; grid-template-columns: 96px 1fr 92px; gap: 10px; align-items: center; font-size: 13px; }
+.adm-bars .l { color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.adm-bars .b { height: 8px; background: var(--raised); border-radius: 4px; overflow: hidden; }
+.adm-bars .b i { display: block; height: 100%; background: #2563EB; border-radius: 4px; }
+.adm-bars .v { text-align: right; font-weight: 500; }
+.adm-bars .v small { margin-left: 6px; color: var(--muted); font-weight: 400; font-size: 12px; }
+.adm-stack { display: flex; height: 12px; border-radius: 6px; overflow: hidden; gap: 2px; background: var(--card); }
+.adm-stack i { display: block; height: 100%; }
+
+.adm-table-wrap { padding: 0; overflow-x: auto; }
+.adm-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.adm-table th { text-align: left; font-weight: 500; color: var(--muted); padding: 10px 14px; border-bottom: 1px solid var(--line); white-space: nowrap; position: sticky; top: 0; background: var(--card); }
+.adm-table td { padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; white-space: nowrap; }
+.adm-table td small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+.adm-table tbody tr { cursor: pointer; transition: background-color 120ms var(--ease); }
+.adm-table tbody tr:hover { background: #f8fafc; }
+.adm-table tbody tr:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+.adm-table .r { text-align: right; }
+
+.adm-drawer-bg { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.3); z-index: 50; display: flex; justify-content: flex-end; animation: fade 160ms var(--ease); }
+.adm-drawer { width: min(480px, 100%); height: 100%; background: var(--card); box-shadow: var(--shadow-float); display: flex; flex-direction: column; animation: slidein 240ms var(--ease); }
+.adm-drawer header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--line); }
+.adm-drawer header h2 { margin: 0; font-size: 16px; font-weight: 600; }
+.adm-drawer header button { border: 0; background: none; width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; color: var(--muted); }
+.adm-drawer .body { padding: 16px 20px 32px; overflow-y: auto; display: grid; gap: 12px; align-content: start; }
+.adm-drawer dl { margin: 0; }
+.adm-log { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+.adm-form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+@keyframes slidein { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+@media (max-width: 1100px) {
+  .adm-kpis { grid-template-columns: repeat(2, 1fr); }
+  .adm-grid2 { grid-template-columns: 1fr; }
+  .adm-queue { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 760px) {
+  .adm-shell { grid-template-columns: 1fr; }
+  .adm-side { position: static; height: auto; flex-direction: row; flex-wrap: wrap; gap: 8px; padding: 10px; }
+  .adm-side nav { grid-auto-flow: column; overflow-x: auto; }
+  .adm-me { margin: 0; border: 0; padding: 0; }
+  .adm-page { padding: 20px 16px 48px; }
+  .adm-queue { grid-template-columns: repeat(2, 1fr); }
+}

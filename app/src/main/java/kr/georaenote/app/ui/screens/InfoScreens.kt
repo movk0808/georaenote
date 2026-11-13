@@ -261,6 +261,9 @@ fun EventDetailScreen(vm: AppViewModel, id: Int, back: () -> Unit, go: (String) 
     var quizOpen by remember { mutableStateOf(false) }
     var picked by remember { mutableStateOf<Int?>(null) }
     var done by remember { mutableStateOf(vm.quizDoneToday()) }
+    var result by remember { mutableStateOf<kr.georaenote.app.QuizResult?>(null) }
+    var submitting by remember { mutableStateOf(false) }
+    val context = androidx.compose.ui.platform.LocalContext.current
     val quiz = Content.quizzes[vm.todayQuizIndex()]
 
     Screen(onBack = back, background = Brand.Dark, bottom = {
@@ -269,8 +272,12 @@ fun EventDetailScreen(vm: AppViewModel, id: Int, back: () -> Unit, go: (String) 
                 !vm.loggedIn -> PrimaryButton("로그인 후 이용 가능합니다", enabled = false) {}
                 e.isQuiz && done -> PrimaryButton("오늘은 이미 참여했어요", enabled = false) {}
                 e.isQuiz && !quizOpen -> PrimaryButton("퀴즈 풀기") { quizOpen = true }
-                e.isQuiz -> PrimaryButton("정답 제출", enabled = picked != null) {
-                    vm.answerQuiz(picked == quiz.answer); done = true
+                e.isQuiz -> PrimaryButton("정답 제출", enabled = picked != null && !submitting) {
+                    submitting = true
+                    vm.answerQuiz(picked ?: 0) { r ->
+                        submitting = false
+                        r.onSuccess { result = it; done = true }.onFailure { android.widget.Toast.makeText(context, it.message, android.widget.Toast.LENGTH_LONG).show() }
+                    }
                 }
                 e.id == 2 -> PrimaryButton("송금하러 가기") { go(Routes.HOME) }
                 else -> PrimaryButton("후기 남기기") { go(Routes.SUPPORT) }
@@ -296,9 +303,9 @@ fun EventDetailScreen(vm: AppViewModel, id: Int, back: () -> Unit, go: (String) 
                     Spacer(Modifier.height(12.dp))
                     quiz.options.forEachIndexed { i, o ->
                         val sel = picked == i
-                        val showAnswer = done && picked != null
+                        val showAnswer = result != null
                         val bg = when {
-                            showAnswer && i == quiz.answer -> Color(0xFF1F6F43)
+                            showAnswer && i == result?.answer -> Color(0xFF1F6F43)
                             showAnswer && sel -> Color(0xFF7A2E33)
                             sel -> Brand.Primary
                             else -> Color(0xFF2E3240)
@@ -310,10 +317,10 @@ fun EventDetailScreen(vm: AppViewModel, id: Int, back: () -> Unit, go: (String) 
                             color = Color.White, fontSize = 15.sp,
                         )
                     }
-                    if (done && picked != null) {
+                    result?.let { res ->
                         Spacer(Modifier.height(10.dp))
-                        Text(if (picked == quiz.answer) "정답이에요! 10M이 적립됐어요." else "아쉬워요. 내일 다시 도전해 주세요.", color = Color.White, fontWeight = FontWeight.Bold)
-                        Text(quiz.explain, color = Color(0xFFB0B6C3), fontSize = 13.sp, modifier = Modifier.padding(top = 4.dp))
+                        Text(if (res.correct) "정답이에요! 10M이 적립됐어요." else "아쉬워요. 내일 다시 도전해 주세요.", color = Color.White, fontWeight = FontWeight.Bold)
+                        Text(res.explain, color = Color(0xFFB0B6C3), fontSize = 13.sp, modifier = Modifier.padding(top = 4.dp))
                     }
                 }
             }

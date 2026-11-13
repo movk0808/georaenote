@@ -206,6 +206,7 @@ fun ContractSenderScreen(vm: AppViewModel, back: () -> Unit, go: (String) -> Uni
 @Composable
 fun ContractProofScreen(vm: AppViewModel, back: () -> Unit, go: (String) -> Unit) {
     val context = LocalContext.current
+    var submitting by remember { mutableStateOf(false) }
     val d = vm.contractDraft
     val type = d.type ?: ContractType.ETC
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris: List<Uri> ->
@@ -214,14 +215,20 @@ fun ContractProofScreen(vm: AppViewModel, back: () -> Unit, go: (String) -> Unit
                 if (c.moveToFirst()) c.getString(0) else null
             } ?: uri.lastPathSegment ?: "첨부파일"
         }
-        vm.contractDraft = vm.contractDraft.copy(proofs = (vm.contractDraft.proofs + names).distinct().take(5))
+        vm.contractDraft = vm.contractDraft.copy(
+            proofs = (vm.contractDraft.proofs + names).distinct().take(5),
+            files = vm.contractDraft.files + names.zip(uris).toMap(),
+        )
     }
 
     Screen("계약등록", back, bottom = {
         BottomBar {
             GrayButton("이전", Modifier.weight(1f)) { back() }
             PrimaryButton("등록하기", Modifier.weight(2f), enabled = d.proofs.isNotEmpty()) {
-                vm.submitContract(); go(Routes.CONTRACT_DONE)
+                if (!submitting) {
+                    submitting = true
+                    vm.submitContract { r -> submitting = false; r.onSuccess { go(Routes.CONTRACT_DONE) }.onFailure { android.widget.Toast.makeText(context, it.message, android.widget.Toast.LENGTH_LONG).show() } }
+                }
             }
         }
     }) {
@@ -284,6 +291,7 @@ fun ContractDoneScreen(onConfirm: () -> Unit) {
 /** 계약 상세 */
 @Composable
 fun ContractDetailScreen(vm: AppViewModel, id: String, back: () -> Unit, go: (String) -> Unit) {
+    val context = LocalContext.current
     val c = vm.contract(id)
     if (c == null) {
         Screen("계약 정보", back) { Text("계약을 찾을 수 없어요.", Modifier.padding(20.dp)) }
@@ -349,7 +357,7 @@ fun ContractDetailScreen(vm: AppViewModel, id: String, back: () -> Unit, go: (St
             onDismissRequest = { confirmDelete = false },
             title = { Text("계약을 삭제할까요?") },
             text = { Text("삭제한 계약은 되돌릴 수 없어요. 송금 내역은 그대로 남아요.") },
-            confirmButton = { TextButton({ confirmDelete = false; vm.deleteContract(id); back() }) { Text("삭제", color = Brand.Danger) } },
+            confirmButton = { TextButton({ confirmDelete = false; vm.deleteContract(id) { r -> r.onSuccess { back() }.onFailure { android.widget.Toast.makeText(context, it.message, android.widget.Toast.LENGTH_LONG).show() } } }) { Text("삭제", color = Brand.Danger) } },
             dismissButton = { TextButton({ confirmDelete = false }) { Text("취소") } },
             containerColor = Color.White,
         )

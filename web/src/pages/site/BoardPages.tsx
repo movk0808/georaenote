@@ -129,6 +129,7 @@ export function EventPage() {
   const navigate = useNavigate()
   const [picked, setPicked] = useState<number | null>(null)
   const [submitted, setSubmitted] = useState(false)
+  const [result, setResult] = useState<{ correct: boolean; answer: number; explain: string } | null>(null)
   if (!e) return <div className="container page-head"><h1>이벤트를 찾을 수 없어요</h1></div>
   const quiz = QUIZZES[quizIndex()]
   const doneToday = s.quizDoneDate === today()
@@ -157,7 +158,7 @@ export function EventPage() {
                 {quiz.options.map((o, i) => {
                   const reveal = submitted || doneToday
                   const style = reveal && submitted
-                    ? i === quiz.answer ? { borderColor: 'var(--paid)', background: 'var(--paid-soft)' } : i === picked ? { borderColor: 'var(--danger)', background: '#fde8e8' } : {}
+                    ? i === result?.answer ? { borderColor: 'var(--paid)', background: 'var(--paid-soft)' } : i === picked ? { borderColor: 'var(--danger)', background: '#fde8e8' } : {}
                     : {}
                   return (
                     <button key={o} className="choice" style={{ justifyItems: 'start', padding: '14px 16px', ...style }} aria-pressed={picked === i} disabled={reveal} onClick={() => setPicked(i)}>
@@ -166,10 +167,10 @@ export function EventPage() {
                   )
                 })}
               </div>
-              {submitted && <p style={{ margin: '16px 0 0' }}><strong className={picked === quiz.answer ? 'paid' : 'danger'}>{picked === quiz.answer ? '정답이에요. 10M이 적립됐어요' : '아쉬워요. 내일 다시 도전해 주세요'}</strong><br /><span className="sub">{quiz.explain}</span></p>}
+              {submitted && <p style={{ margin: '16px 0 0' }}><strong className={result?.correct ? 'paid' : 'danger'}>{result?.correct ? '정답이에요. 10M이 적립됐어요' : '아쉬워요. 내일 다시 도전해 주세요'}</strong><br /><span className="sub">{result?.explain}</span></p>}
               {!submitted && doneToday && <p className="sub" style={{ margin: '16px 0 0' }}>오늘은 이미 참여했어요. 내일 새 문제가 열려요</p>}
               {!submitted && !doneToday && (
-                <button className="btn btn-primary" style={{ marginTop: 16 }} disabled={picked === null} onClick={() => { answerQuiz(picked === quiz.answer); setSubmitted(true) }}>정답 제출</button>
+                <button className="btn btn-primary" style={{ marginTop: 16 }} disabled={picked === null} onClick={() => { if (picked === null) return; answerQuiz(picked).then((r) => { setResult(r); setSubmitted(true) }).catch((e: Error) => alert(e.message)) }}>정답 제출</button>
               )}
             </>
           )}
